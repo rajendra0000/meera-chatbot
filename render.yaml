@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: hey-concrete-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3001"
+      - key: DATABASE_URL
+        sync: false # User must provide this in the Render dashboard
+      - key: GROQ_API_KEY
+        sync: false 
+      - key: GROQ_API_KEY_2
+        sync: false 
+      - key: GROQ_API_KEY_3
+        sync: false 
+      - key: GROQ_API_KEY_4
+        sync: false 
+      - key: GROQ_API_KEY_5
+        sync: false 
+      - key: FRONTEND_URL
+        value: "https://your-frontend-url-here.vercel.app" # To be replaced later
+      - key: GUPSHUP_API_KEY
+        sync: false
+      - key: GUPSHUP_APP_NAME
+        sync: false
+      - key: GUPSHUP_SOURCE_NUMBER
+        sync: false
+      - key: GUPSHUP_BASE_URL
+        value: "https://api.gupshup.io/wa/api/v1/msg"
+      - key: GUPSHUP_WEBHOOK_SECRET
+        sync: false
+      - key: ADMIN_API_KEY
+        sync: false

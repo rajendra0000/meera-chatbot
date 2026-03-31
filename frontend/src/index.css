@@ -1,0 +1,222 @@
+/* ══════════════════════════════════════════════════════════
+   HEY CONCRETE — MEERA OS
+   Global Design System  ·  Industrial Luxury Dark Theme
+   "Bloomberg Terminal meets luxury interior design studio"
+══════════════════════════════════════════════════════════ */
+
+/* ── Google Fonts ──────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS Custom Properties ─────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --c-ink:          #0a0a0a;
+  --c-panel:        #111111;
+  --c-panel-raised: #161616;
+  --c-code:         #0d0d0d;
+
+  /* Borders */
+  --c-line:         #1f1f1f;
+  --c-line-strong:  #2a2a2a;
+
+  /* Text */
+  --c-text:         #f5f0eb;
+  --c-soft:         #b8b0a4;
+  --c-muted:        #6b6560;
+
+  /* Amber / Gold accent */
+  --c-amber:        #c8a96e;
+  --c-amber-light:  #e2c98f;
+  --c-amber-dim:    #3d2e1a;
+
+  /* Status */
+  --c-hot:          #e85d4a;
+  --c-hot-dim:      #2d1510;
+  --c-success:      #4ade80;
+  --c-success-dim:  #0f2d1a;
+
+  /* Typography */
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-sans:    "DM Sans", ui-sans-serif, system-ui;
+  --font-mono:    "JetBrains Mono", "Courier New", monospace;
+
+  color-scheme: dark;
+}
+
+/* ── Base Styles ───────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--c-text);
+  background-color: var(--c-ink);
+  background-image:
+    radial-gradient(ellipse at top left,  rgba(200, 169, 110, 0.07) 0%, transparent 42%),
+    radial-gradient(ellipse at bottom right, rgba(200, 169, 110, 0.04) 0%, transparent 52%),
+    linear-gradient(180deg, #0a0a0a 0%, #0d0b09 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* Selection */
+::selection {
+  background-color: rgba(200, 169, 110, 0.25);
+  color: var(--c-text);
+}
+
+/* ── Scrollbars ─────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--c-line-strong); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--c-muted); }
+
+/* ── Typography Utilities ──────────────────────────────── */
+.font-display { font-family: var(--font-display); }
+.font-mono    { font-family: var(--font-mono); }
+
+/* ── Focus Rings ───────────────────────────────────────── */
+:focus-visible {
+  outline: 1.5px solid var(--c-amber);
+  outline-offset: 2px;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 1.5px var(--c-amber);
+}
+
+/* ── Form Elements Base ────────────────────────────────── */
+input,
+textarea,
+select {
+  font-family: var(--font-sans);
+  color: var(--c-text);
+  background-color: transparent;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--c-muted);
+}
+
+select option {
+  background-color: var(--c-panel);
+  color: var(--c-text);
+}
+
+/* ── Animations ────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* Typing indicator dots */
+@keyframes dotPulse {
+  0%, 80%, 100% { transform: scale(0.5); opacity: 0.35; }
+  40%           { transform: scale(1);   opacity: 1;    }
+}
+
+/* Shimmer skeleton */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+/* Live status pulse */
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ── Utility Classes ───────────────────────────────────── */
+.animate-fade-in  { animation: fadeIn  200ms  cubic-bezier(0.2, 0, 0, 1) both; }
+.animate-fade-up  { animation: fadeUp  250ms  cubic-bezier(0.2, 0, 0, 1) both; }
+.animate-live     { animation: livePulse 2s ease-in-out infinite; }
+
+/* Typing indicator wrapper — usage: <div class="typing-dots"><span/><span/><span/></div> */
+.typing-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+}
+
+.typing-dots span {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--c-amber);
+  animation: dotPulse 1.4s ease-in-out infinite;
+}
+
+.typing-dots span:nth-child(2) { animation-delay: 0.16s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.32s; }
+
+/* Shimmer skeleton */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--c-panel)        0%,
+    var(--c-panel-raised) 50%,
+    var(--c-panel)        100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s linear infinite;
+}
+
+/* ── Amber CTA button gradient (Stitch design system directive) ── */
+.btn-amber {
+  background: linear-gradient(135deg, var(--c-amber-light), var(--c-amber));
+  color: #261900;
+  font-weight: 600;
+  border-radius: 9999px;
+  transition: opacity 150ms cubic-bezier(0.2, 0, 0, 1),
+              box-shadow 150ms cubic-bezier(0.2, 0, 0, 1);
+}
+.btn-amber:hover:not(:disabled) {
+  opacity: 0.9;
+  box-shadow: 0 0 20px rgba(200, 169, 110, 0.25);
+}
+.btn-amber:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Ghost button */
+.btn-ghost {
+  border: 1px solid var(--c-line);
+  color: var(--c-soft);
+  border-radius: 9999px;
+  transition: border-color 150ms, color 150ms;
+}
+.btn-ghost:hover {
+  border-color: rgba(200, 169, 110, 0.45);
+  color: var(--c-text);
+}
+
+/* ── Status badge helpers ───────────────────────────────── */
+.badge-hot  { background-color: var(--c-hot-dim);     border: 1px solid rgba(232,93,74,0.3);  color: var(--c-hot);     }
+.badge-warm { background-color: #2a2208;              border: 1px solid rgba(202,138,4,0.3);  color: #fbbf24;          }
+.badge-active { background-color: #0d1a2a;            border: 1px solid rgba(59,130,246,0.3); color: #93c5fd;          }
+.badge-done { background-color: var(--c-amber-dim);   border: 1px solid rgba(200,169,110,0.3); color: var(--c-amber-light); }

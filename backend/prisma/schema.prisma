@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PromptType {
+  SYSTEM
+  LEARNING
+}
+
+enum ConversationChannel {
+  WEB
+  GUPSHUP
+  SANDBOX
+}
+
+enum ConversationStatus {
+  ACTIVE
+  COMPLETED
+  HANDOVER
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum ChatStep {
+  GREET
+  NAME
+  PRODUCT_TYPE
+  CITY
+  BUDGET
+  AREA
+  ROOM_TYPE
+  STYLE
+  TIMELINE
+  COMPLETED
+}
+
+enum LeadStatus {
+  COLD
+  WARM
+  HOT
+}
+
+model Product {
+  id         String   @id
+  name       String
+  category   String
+  priceRange String
+  dimensions String
+  unitDesc   String
+  imageUrl   String
+  bestFor    String
+  description String?
+  textures    String?
+  imageUrls   String?
+  productUrl  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Showroom {
+  id        String   @id
+  name      String
+  city      String
+  address   String
+  contact   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PromptVersion {
+  id            Int        @id @default(autoincrement())
+  type          PromptType
+  content       String
+  versionNumber Int
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+}
+
+model Conversation {
+  id            String              @id @default(cuid())
+  channel       ConversationChannel @default(WEB)
+  contactId     String?
+  customerName  String?
+  step          ChatStep            @default(GREET)
+  status        ConversationStatus  @default(ACTIVE)
+  version       Int                 @default(0)
+  collectedData Json?
+  messages      Message[]
+  lead          Lead?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+}
+
+model Message {
+  id             String      @id @default(cuid())
+  conversationId String
+  role           MessageRole
+  content        String
+  metadata       Json?
+  createdAt      DateTime    @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model Lead {
+  id                  String      @id @default(cuid())
+  conversationId      String      @unique
+  name                String?
+  score               Int         @default(0)
+  status              LeadStatus  @default(COLD)
+  productInterest     String?
+  customerType        String?
+  investmentRange     String?
+  areaSqft            String?
+  timeline            String?
+  triggerType         String?
+  showroomCity        String?
+  wantsCallback       Boolean     @default(false)
+  wantsSample         Boolean     @default(false)
+  estimatedOrderValue Int?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  leadScore    LeadScore?
+}
+
+model LeadScore {
+  id              String   @id @default(cuid())
+  leadId          String   @unique
+  budget          Int      @default(0)
+  space           Int      @default(0)
+  productInterest Int      @default(0)
+  timeline        Int      @default(0)
+  engagement      Int      @default(0)
+  total           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+}
+
+model FaqEntry {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  category  String
+  keywords  String
+  createdAt DateTime @default(now())
+}

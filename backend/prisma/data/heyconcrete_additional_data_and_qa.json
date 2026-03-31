@@ -1,0 +1,883 @@
+{
+  "additional_extracted_data": {
+    "company_history_and_story": {
+      "founded_year": "2019",
+      "years_in_industry": "Six years (as of 2025/26)",
+      "origin_story": "Born out of wonderment, Hey Concrete explores the unlimited fresh possibilities that concrete hides in its imperfections. The brand rebrand industrial concrete into luxurious wall panels that balance artistry and technique, design and engineering.",
+      "mission_statement": "We're here to change your perception about concrete by creating a grey something that evolves with you.",
+      "tagline": "Walls that scream RAWyalty",
+      "manufacturing_process": "Each step of the process is done by hand and watched over by attentive eyes. From the very beginning till packaging, a dedicated team takes part in the process of mixing, molding, grinding, selecting and treating the panels before they get to leave the factory.",
+      "manufacturing_facility_size": "India's biggest manufacturing facility (exact sqft shown as animated counter on homepage)",
+      "product_range_note": "Products range from wall panels and wall murals to luxury wash basins and bricks",
+      "team_description": "A team of skilled craftsmen and designers who work together. Supported by state-of-the-art manufacturing techniques and a growing, skilled team of craftsmen."
+    },
+    "new_product_category_wash_basins": {
+      "note": "Wash Basins are listed in the navigation menu (About page and footer) as a product and shop category, but the /wash-basins/ page currently returns a 404 error, indicating this category is either upcoming or temporarily unavailable.",
+      "mentioned_in": [
+        "About page navigation",
+        "About page footer collections",
+        "CII GreenPro page product portfolio description"
+      ],
+      "url_attempted": "https://heyconcrete.com/wash-basins/"
+    },
+    "sustainability_and_certifications": {
+      "greenpro_certification": {
+        "issuing_body": "Confederation of Indian Industry (CII)",
+        "certification_type": "GreenPro - Type-1 Ecolabel",
+        "global_accreditation": "Globally recognized and accredited by the Global Ecolabelling Network (GEN) under GENICES",
+        "significance": "Guarantees that Hey Concrete products meet high sustainability standards and contribute to reducing the environmental footprint throughout the building lifecycle",
+        "url": "https://heyconcrete.com/cii-green-pro-certified/"
+      },
+      "green_building_rating_compatibility": [
+        "IGBC",
+        "LEED",
+        "GRIHA"
+      ],
+      "sustainability_practices": [
+        "Eco-friendly manufacturing processes",
+        "Utilizing recycled materials where possible",
+        "Reduced carbon footprint focus",
+        "Each panel made by hand minimizing material wastage and power use",
+        "Zero Waste certified"
+      ],
+      "material_note": "H-UHPC (Hey Ultra-High Performance Concrete) - self-developed formulation that synergizes strength, durability, and design sophistication"
+    },
+    "testimonials": [
+      {
+        "client": "Ar. Sabaree Bala",
+        "location": "Coimbatore",
+        "quote_summary": "Praised the team for carving their imagination on the primary wall of the VILVAH STORE. Said seeing leaves engraved on concrete exactly as per the drawing was a delight.",
+        "project_type": "Retail store - VILVAH STORE"
+      },
+      {
+        "client": "Design Inc.",
+        "location": "Udaipur",
+        "quote_summary": "Praised design supportive approach, promptness, and dependability. Highlighted availability of prototypes and experimental products. Endorsed their work ethics and products genuinely.",
+        "project_type": "Design firm endorsement"
+      },
+      {
+        "client": "Mr. Arun",
+        "location": "Tripura",
+        "quote_summary": "Found Hey Concrete through Instagram for compound wall ideas. Praised customization capability and assistance from design development to execution.",
+        "project_type": "Compound walls"
+      },
+      {
+        "client": "Mr. Yash",
+        "location": "Lonavala",
+        "quote_summary": "Needed to improve facade without disturbing building structure. Used porous textured concrete panels which enhanced aesthetics exponentially.",
+        "project_type": "Facade renovation"
+      },
+      {
+        "client": "Dr. Vyom Bolia",
+        "location": "Udaipur",
+        "quote_summary": "Used WRAP panels for office wall with concealed lighting. Said the result looked better than imagination. Praised the product quality.",
+        "project_type": "Office wall with concealed lighting using WRAP panels"
+      }
+    ],
+    "partner_network": {
+      "total_partners_listed": 31,
+      "partner_phone_common": "+91 9251597924",
+      "note": "All partners share the same contact number +919251597924",
+      "international_partner": {
+        "city": "Kathmandu",
+        "country": "Nepal",
+        "partner_name": "RUKMANI INTERNATIONAL",
+        "address": "Maitidevi, Kathmandu, Nepal - 44600"
+      },
+      "partners_by_city": [
+        {
+          "city": "New Delhi",
+          "partner": "KASA DECOR",
+          "address": "B-5/3 Rajouri Garden, 380, Opp. Metro Pillar No, Block B, Rajouri Garden, Delhi 110027"
+        },
+        {
+          "city": "Bengaluru",
+          "partner": "MARUTHI CERAMICS",
+          "address": "9th C Main Road, #311, 100 Feet Rd, HRBR Layout 1st Block, Banaswadi, Bengaluru, Karnataka 560043"
+        },
+        {
+          "city": "Bengaluru",
+          "partner": "MARUTHI EMPORIA",
+          "address": "74/1-2989-C, Mezzanine Floor, Main Road, Indiranagar, Bangalore, Karnataka 560038"
+        },
+        {
+          "city": "Hyderabad",
+          "partner": "TRANCEFORM",
+          "address": "Plot number 1029, Rd Number 45, Opposite Electric Substation, CBI Colony, Jubilee Hills, Hyderabad, Telangana 500033"
+        },
+        {
+          "city": "Guwahati",
+          "partner": "BATH & SANITARY",
+          "address": "Christian Basti, Opp Aaykar Bhawan GS Road, Guwahati, Assam, Pin - 781005"
+        },
+        {
+          "city": "Indore",
+          "partner": "STONE WORLD",
+          "address": "Plot No 116, Sector FB, Scheme No 94, Near Arpit Hospital, Ring Road, Indore, Madhya Pradesh 452016"
+        },
+        {
+          "city": "Surat",
+          "partner": "ROCK DECOR",
+          "address": "Plot no:-7 Balaji Industrial-2 nr. HP. Petrol Pump, Gandhi Kutir, Surat, Gujarat 395017"
+        },
+        {
+          "city": "Bhubaneswar",
+          "partner": "CLAY BY LINGARAJ GRANITES",
+          "address": "8/A, Near Sai International School, Chandaka Industrial Estate, Patia, Bhubaneswar, Odisha 751024"
+        },
+        {
+          "city": "Kochi",
+          "partner": "ARKNACK",
+          "address": "No. 40/2510 A, Surabhi Road, Anchumana, Edappally P.O. Ernakulam, Kerala - 682024"
+        },
+        {
+          "city": "Coimbatore",
+          "partner": "KIBA KITCHEN & BATH STUDIO",
+          "address": "No. 100, Bashyakarlu Road West, R S Puram, Coimbatore, Tamil Nadu 641002"
+        },
+        {
+          "city": "Pune",
+          "partner": "SYMMETRY",
+          "address": "Gala No. 1, Ground Floor, Opp. Vardhaman Sanskrutik Bhawan, Gangadham-Shatrunjay Mandir Road, Pune 411037"
+        },
+        {
+          "city": "Siliguri",
+          "partner": "IO STUDIO",
+          "address": "2nd Floor, IO Studio, Tradium Building, Chayan Para, Check Post, Siliguri, West Bengal 734001"
+        },
+        {
+          "city": "Meerut",
+          "partner": "PARASNATH (Designer Tile And Bath Studio)",
+          "address": "SLJ MART Main Divider Road Near IIMT Hospital Ganga Nagar Meerut, UP"
+        },
+        {
+          "city": "Dehradun",
+          "partner": "LUXXIRO",
+          "address": "29, Balbir Rd, Dalanwala, Dehradun, Uttarakhand 248001"
+        },
+        {
+          "city": "Bhilwara",
+          "partner": "HOUSE OF STONES",
+          "address": "D, 20, Chittorgarh Rd, near Sangam House, Opposite Naveen Electronics, Madhopur, Rajasthan 311001"
+        },
+        {
+          "city": "Nagpur",
+          "partner": "NATURAL STONES",
+          "address": "KDK College Chowk, Plot No. 125, KDK College Road, Venkatesh Nagar, Nagpur, Maharashtra 440025"
+        },
+        {
+          "city": "Kota",
+          "partner": "AURA",
+          "address": "A-93 New Dhanmandi, Behind Vijay Traders, Aerodrame Kota"
+        },
+        {
+          "city": "Ghaziabad",
+          "partner": "AGGARWAL BATH CONCEPTS",
+          "address": "D 11 kavi Nagar Ind Area Near Diamond Flyover, Ghaziabad"
+        },
+        {
+          "city": "Mumbai",
+          "partner": "BLUE LOFT FURNITURE STORE",
+          "address": "F9, First Floor, Laxmi Mills Compound, Shakti Mills Lane, Mahalaxmi, Mumbai, Maharashtra 400011"
+        },
+        {
+          "city": "Karnal (Haryana)",
+          "partner": "CHAUDHARY MARBLES",
+          "address": "Near Village Salaru, Indri Road, Karnal, Haryana 132001"
+        },
+        {
+          "city": "Hubballi",
+          "partner": "MALANI GRANITES AND TILES",
+          "address": "14, Mishrikoti Village, Karwar Road, Hubballi - 581204"
+        },
+        {
+          "city": "Chandigarh / Mohali",
+          "partner": "THE TILE STUDIO",
+          "address": "Plot No 403, Sector 82, Mohali - 140307"
+        },
+        {
+          "city": "Gurgaon",
+          "partner": "DE CERAMICA",
+          "address": "A-511, Sushant Lok Phase 1, Opp. IFFCO Chowk Metro Station, Gurgaon"
+        },
+        {
+          "city": "Kaithal",
+          "partner": "CHAUDHARY SANITARY & TILES",
+          "address": "Near Hafed Godowon, Cheeka Road Bye Pass, Kaital, Haryana-136027"
+        },
+        {
+          "city": "Jaipur",
+          "partner": "BATH & LITES",
+          "address": "B-32-A, 10B Scheme, Gopal Pura Bypass, Opp Safari Hotel, Jaipur, Rajasthan-302018"
+        },
+        {
+          "city": "Agra",
+          "partner": "ROOP N SONS",
+          "address": "Com. - 7, Sec. - 5, Awas vikas Yojana Bodla, Sikandar Road, Agra - 282007"
+        },
+        {
+          "city": "Raipur",
+          "partner": "LUXURY SURFACES",
+          "address": "Solus Tower, 3rd Floor, Near Puma Showroom, Telibandha, Raipur 492001"
+        },
+        {
+          "city": "Hubballi (second listing)",
+          "partner": "MALANI GRANITE & TILES",
+          "address": "Ground Floor, 1289A, Mishrikoti Village, Hubali, Karwar Road, Dharwad, Karnataka-581204"
+        },
+        {
+          "city": "Chennai",
+          "partner": "CLAD CRAFT",
+          "address": "3rd Floor, 144, Purasaivakkam High Rd, Kilpauk Garden Colony, Purasaiwakkam, Chennai, Tamil Nadu 600010"
+        },
+        {
+          "city": "Kathmandu",
+          "partner": "RUKMANI INTERNATIONAL",
+          "address": "Maitidevi, Kathmandu, Nepal - 44600"
+        },
+        {
+          "city": "Ahmedabad",
+          "partner": "LITHOS STUDIO",
+          "address": "Shop no. 19 Aryabhoomi near MG Farm, Jodhpur Gham Road, Satellite, Ahmedabad 380015"
+        }
+      ]
+    },
+    "projects_portfolio": {
+      "total_projects_listed": 11,
+      "projects": [
+        {
+          "name": "Bolia's Residence",
+          "url": "https://heyconcrete.com/projects/bolias-residence/",
+          "thumbnail": "https://heyconcrete.com/wp-content/uploads/2024/12/bolia-residence.webp",
+          "images": [
+            "https://heyconcrete.com/wp-content/uploads/2024/08/Front.webp",
+            "https://heyconcrete.com/wp-content/uploads/2024/08/bolias-residence-04.webp",
+            "https://heyconcrete.com/wp-content/uploads/2024/08/bolias-residence-01.webp",
+            "https://heyconcrete.com/wp-content/uploads/2024/08/bolias-residence-03.webp",
+            "https://heyconcrete.com/wp-content/uploads/2024/08/bolias-residence-02.webp"
+          ]
+        },
+        {
+          "name": "Bharat Suhalka's Residence",
+          "url": "https://heyconcrete.com/projects/bharat-suhalkas-residence/",
+          "thumbnail": "https://heyconcrete.com/wp-content/uploads/2024/12/Bharat-Suhalka-Residence.webp"
+        },
+        {
+          "name": "Fusion Store",
+          "url": "https://heyconcrete.com/projects/fusion-store/",
+          "thumbnail": "https://heyconcrete.com/wp-content/uploads/2024/12/fusion-store.webp",
+          "images": [
+            "https://heyconcrete.com/wp-content/uploads/2024/08/Front-Fusion-Store.webp",
+            "https://heyconcrete.com/wp-content/uploads/2024/08/Fusion-Store-02.webp",
+            "https://heyconcrete.com/wp-content/uploads/2024/08/Fusion-Store-03.webp",
+            "https://heyconcrete.com/wp-content/uploads/2024/08/Fusion-Store-04.webp"
+          ]
+        },
+        {
+          "name": "The Last Order",
+          "url": "https://heyconcrete.com/projects/the-last-order/",
+          "thumbnail": "https://heyconcrete.com/wp-content/uploads/2025/04/first-1-scaled-e1744446636755.webp"
+        },
+        {
+          "name": "Ashirwad Jewellers",
+          "url": "https://heyconcrete.com/projects/ashirwad-jewellers/",
+          "thumbnail": "https://heyconcrete.com/wp-content/uploads/2025/04/18-1-wecompress.com_-scaled-e1744444921527.webp"
+        },
+        {
+          "name": "Project (Compound wall panels)",
+          "url": "https://heyconcrete.com/projects/folder2/",
+          "thumbnail": "https://heyconcrete.com/wp-content/uploads/2025/04/485766333_1081040514044158_8307716613778775823_n-e1744391889154.webp"
+        },
+        {
+          "name": "Project (Brick Cladding)",
+          "url": "https://heyconcrete.com/projects/folder1/",
+          "thumbnail": "https://heyconcrete.com/wp-content/uploads/2025/04/Concrete-Brick-Cladding-.webp"
+        },
+        {
+          "name": "Project (Toran panels)",
+          "url": "https://heyconcrete.com/projects/folder/",
+          "thumbnail": "https://heyconcrete.com/wp-content/uploads/2025/04/toran-wall-panels-e1744392220699.webp"
+        },
+        {
+          "name": "Project (Recursion panels)",
+          "url": "https://heyconcrete.com/project1/",
+          "thumbnail": "https://heyconcrete.com/wp-content/uploads/2025/05/recursion-design-concrete-panels-by-hey-concrete.webp"
+        },
+        {
+          "name": "Ramkamal",
+          "url": "https://heyconcrete.com/ramkamal/",
+          "thumbnail": "https://heyconcrete.com/wp-content/uploads/elementor/thumbs/luxury-villa-walls-showcasing-concrete-wall-panels.jpeg-e1748237228751-r6d3d2aqjy7relww4pwo8fs3jib9cl91lj74mlnu0i.webp"
+        },
+        {
+          "name": "Project (Ridge and Furrow panels)",
+          "url": "https://heyconcrete.com/project2/",
+          "thumbnail": "https://heyconcrete.com/wp-content/uploads/elementor/thumbs/Elevating-spaces-with-the-bold-textures-of-Hey-Concretes-Ridge-and-Furrow-Panels-1-e1748238275381-1-r6d47xbyy4golp31x25p3nexoy742trruab1vnwhpu.webp"
+        }
+      ]
+    },
+    "shipping_policy": {
+      "url": "https://heyconcrete.com/shipping-policy/",
+      "shipping_timeframe_to_dispatch": "1-2 business days from receipt of payment",
+      "delivery_timeframe_pan_india": "9-15 business days",
+      "shipping_charges": "Calculated based on weight, dimensions, and shipping address. Shown at checkout.",
+      "shipping_destinations": "PAN India only currently",
+      "international_shipping_status": "Currently being explored - not yet available",
+      "order_tracking": "Email with tracking status sent after dispatch",
+      "damaged_shipment_window": "Contact within 48 hours of receipt",
+      "damaged_shipment_resolution": "Replacement or refund arranged",
+      "lost_shipment_policy": "Investigation with courier; resend or refund provided",
+      "custom_duties": "Customer responsibility for international orders (when available)"
+    },
+    "refund_and_cancellation_policy": {
+      "url": "https://heyconcrete.com/refund-and-cancellation-policy/",
+      "cancellation_before_shipment": "Full refund to original payment method. Must notify within 24 hours of placing order.",
+      "cancellation_after_shipment": "Not accepted. Return upon receipt subject to return policy.",
+      "refund_eligibility": "Damaged, defective, or incorrect items received",
+      "refund_request_window": "Within 3-5 days of receiving items",
+      "refund_processing_time": "1-2 business days after receipt and verification",
+      "return_shipping_cost": "Customer responsibility unless item is damaged or defective due to company error",
+      "return_process_steps": [
+        "1. Contact customer support at info@heyconcrete.com or 8107719987 within 3-5 days of receipt",
+        "2. Receive return instructions and authorization",
+        "3. Package item securely in original or similar packaging",
+        "4. Ship to return address provided by support team",
+        "5. Receive confirmation and refund status notification after inspection"
+      ],
+      "custom_orders_policy": "Generally non-refundable unless manufacturing defect or company error",
+      "sale_items_policy": "Typically final sale and not eligible for returns or refunds",
+      "damaged_defective_notification_window": "Within 24 hours of receipt"
+    },
+    "partnership_program": {
+      "url": "https://heyconcrete.com/partner-with-us/",
+      "franchise_opportunity": true,
+      "partnership_types": [
+        "Contractors",
+        "Distributors",
+        "Corporate clients for large-scale supply"
+      ],
+      "value_propositions": [
+        "Premium Quality with rigorous quality control processes",
+        "Extensive Product Range for residential, commercial, industrial needs",
+        "PAN India Delivery with widespread distribution network",
+        "Sustainable Practices with eco-friendly manufacturing",
+        "Experienced Team of engineers, architects and technical experts",
+        "Tailored Solutions for custom project specifications"
+      ],
+      "working_model": [
+        "Collaboration at every step from consultation to delivery",
+        "Flexible business model options",
+        "Access to continuous innovation and product development"
+      ],
+      "contact_method": "Via enquiry form at https://heyconcrete.com/partner-with-us/",
+      "form_fields": [
+        "Name",
+        "Email",
+        "Phone Number",
+        "City",
+        "Questions or Comments"
+      ]
+    },
+    "general_faq": {
+      "url": "https://heyconcrete.com/faqs/",
+      "faqs": [
+        {
+          "q": "What are concrete wall panels?",
+          "a": "Concrete wall panels are precast concrete elements used in construction for interior and exterior walls. They offer durability, strength, and aesthetic appeal."
+        },
+        {
+          "q": "What are the advantages of using concrete wall panels?",
+          "a": "Fire resistance, noise reduction, thermal insulation, low maintenance, and design versatility."
+        },
+        {
+          "q": "Are concrete wall panels suitable for both residential and commercial projects?",
+          "a": "Yes, they can be used in residential homes, commercial buildings, retail spaces, and more."
+        },
+        {
+          "q": "What design options are available?",
+          "a": "Wide range of textures, colors, and finishes to suit different architectural styles."
+        },
+        {
+          "q": "How are concrete wall panels installed?",
+          "a": "By professionals using direct fixing, mechanical fixing, or adhesive bonding depending on project requirements."
+        },
+        {
+          "q": "Are concrete wall panels eco-friendly?",
+          "a": "Yes, made from natural materials, recyclable at end of lifespan, and contribute to energy efficiency through thermal mass."
+        },
+        {
+          "q": "What is the lifespan of concrete wall panels?",
+          "a": "Several decades with proper maintenance. Resistant to rot, decay, pests, and weathering."
+        },
+        {
+          "q": "Can concrete wall panels be customized?",
+          "a": "Yes, custom sizes, shapes, textures, and finishes are available."
+        },
+        {
+          "q": "Are concrete wall panels cost-effective?",
+          "a": "Initial cost may be higher but long-term durability, low maintenance, and energy savings result in cost savings over time."
+        },
+        {
+          "q": "Do they require special maintenance?",
+          "a": "No special care needed. Regular cleaning with mild detergent and water. Periodic inspections recommended."
+        }
+      ]
+    },
+    "wall_panel_page_faqs": {
+      "source": "https://heyconcrete.com/wall-panels/",
+      "faqs": [
+        {
+          "q": "Which type of wall panel is best?",
+          "a": "The best wall panel depends on aesthetic and functional needs. For a unique, durable, and premium look, concrete wall panels are exceptional. Hey Concrete's H-UHPC panels offer authentic concrete texture in a lightweight, easy-to-install format."
+        },
+        {
+          "q": "What makes Hey Concrete's premium wall panels unique in India?",
+          "a": "Crafted using H-UHPC ensuring strength, durability, and modern design. With 19+ color options and 3 textures, ideal for both interiors and exteriors."
+        },
+        {
+          "q": "Are your designer wall panels suitable for both homes and commercial projects?",
+          "a": "Yes, versatile for homes, offices, showrooms, and large commercial spaces. Zero-maintenance and water-resistant for long-term use."
+        },
+        {
+          "q": "Are your wall panels eco-friendly?",
+          "a": "Yes, Green Pro Certified and sustainable."
+        },
+        {
+          "q": "What is the best wall cladding option for Indian homes?",
+          "a": "Hey Concrete's wall cladding - durable, weather-proof, and a modern alternative to stone and wood finishes."
+        },
+        {
+          "q": "Are Hey Concrete panels water-resistant?",
+          "a": "Yes, both water-resistant and waterproof options available for kitchens, baths, and outdoors."
+        },
+        {
+          "q": "Do you have fire-proof and termite-proof wall panels?",
+          "a": "Yes, Hey Concrete wall panels are fire-proof and termite-proof."
+        },
+        {
+          "q": "Are wall panels washable?",
+          "a": "Yes. Sealed for protection, wiped clean with a damp cloth and mild soap."
+        }
+      ]
+    },
+    "blog_content": {
+      "url": "https://heyconcrete.com/blog/",
+      "blog_categories": [
+        "Blog",
+        "Breeze Blocks",
+        "Brick Claddings",
+        "News",
+        "Wall Murals",
+        "Wall Panels"
+      ],
+      "recent_articles": [
+        {
+          "title": "Best Wall Panels in Hyderabad",
+          "url": "https://heyconcrete.com/best-wall-panels-in-hyderabad/",
+          "date": "February 14, 2026",
+          "views": 473
+        },
+        {
+          "title": "Holi 2026 in Udaipur: Tradition Meets Contemporary Design",
+          "url": "https://heyconcrete.com/holi-in-udaipur/",
+          "date": "February 11, 2026",
+          "views": 1961
+        },
+        {
+          "title": "What is Wall Cladding? A Guide to Style, Protection & Sustainable Choice",
+          "url": "https://heyconcrete.com/what-is-wall-cladding/",
+          "date": "February 7, 2026",
+          "views": 387
+        },
+        {
+          "title": "Best Wall Panels in Jaipur",
+          "url": "https://heyconcrete.com/best-wall-panels-in-jaipur/",
+          "date": "January 22, 2026",
+          "views": 343
+        },
+        {
+          "title": "Best Wall Panels in Bangalore",
+          "url": "https://heyconcrete.com/best-wall-panels-in-bangalore/",
+          "date": "January 19, 2026",
+          "views": 511
+        },
+        {
+          "title": "Best Wall Panels in Ahmedabad",
+          "url": "https://heyconcrete.com/best-wall-panels-in-ahmedabad/",
+          "date": "January 14, 2026",
+          "views": 385
+        },
+        {
+          "title": "Decorative Wall Panel in India",
+          "url": "https://heyconcrete.com/decorative-wall-panel-in-india/",
+          "date": "December 19, 2025",
+          "views": 382
+        },
+        {
+          "title": "How Wall Cladding can Transforms Interior & Exterior Spaces",
+          "url": "https://heyconcrete.com/how-wall-cladding-can-transforms-interior-exterior-spaces/",
+          "date": "December 5, 2025",
+          "views": 285
+        },
+        {
+          "title": "How to Choose the Best Wall Panels Design for Your Living Room?",
+          "url": "https://heyconcrete.com/how-to-choose-the-best-wall-panels-design-for-your-living-room/",
+          "date": "September 29, 2025",
+          "views": 382
+        },
+        {
+          "title": "Why India's Leading Architects are Choosing Concrete Panels in 2025",
+          "url": "https://heyconcrete.com/why-indias-leading-architects-are-choosing-concrete-panels-in-2025/",
+          "date": "August 21, 2025",
+          "views": 527
+        },
+        {
+          "title": "Why Wall Panels Are the Future of Sustainable Construction",
+          "url": "https://heyconcrete.com/why-wall-panels-are-the-future-of-sustainable-construction/",
+          "date": "August 4, 2025",
+          "views": 551
+        },
+        {
+          "title": "Built to Last: Why Architects Trust UHPC Wall Panels",
+          "url": "https://heyconcrete.com/built-to-last-why-architects-trust-uhpc-wall-panels/",
+          "date": "June 25, 2025",
+          "views": 657
+        }
+      ],
+      "newsroom_external_reference": "YourStory article - Hey Concrete raises Rs 75 crore to scale sustainable concrete innovation (July 2025). URL: https://yourstory.com/2025/07/concrete-raises-rs-75-crore-scale-sustainable-concrete-innovat"
+    },
+    "office_hours_discrepancy": {
+      "about_page_hours": "Mon-Sat 9:00-19:00",
+      "other_pages_hours": "Mon-Sat 10:00-19:00",
+      "note": "About page states opening at 9:00 AM; all other pages state 10:00 AM. Customers should verify before visiting."
+    },
+    "social_media_profiles": {
+      "facebook": "https://www.facebook.com/heyconcrete",
+      "instagram": "https://www.instagram.com/heyconcrete",
+      "x_twitter": "https://x.com/hey_concrete",
+      "youtube": "https://www.youtube.com/channel/UCkb9oYRM3xM6gOEx3e5h66A",
+      "pinterest": "https://in.pinterest.com/heyconcrete/"
+    },
+    "privacy_policy_summary": {
+      "url": "https://heyconcrete.com/privacy-policy/",
+      "data_collected": [
+        "Company name",
+        "Address",
+        "Contact person",
+        "Telephone number",
+        "Fax number",
+        "Email",
+        "Cookies",
+        "IP address"
+      ],
+      "data_usage": "Form data kept internal and not publicly posted. Browsing data used for security and content personalization. Statistical analysis shared with business partners.",
+      "cookies_required": "Browser must be configured to accept cookies to visit the website.",
+      "security_disclaimer": "No data transmission over the Internet can be guaranteed 100% secure. Users transmit at own risk.",
+      "disclosure_conditions": [
+        "Enforce Hey Concrete provisions",
+        "Protect rights of company or users",
+        "Contract with third-parties for better service",
+        "Conform to national regulations or legal processes"
+      ]
+    },
+    "product_technical_properties": {
+      "wall_panels_features": [
+        "Strength & Durability",
+        "Thin & Lightweight",
+        "Weather & UV Resistance",
+        "Energy Efficiency & Comfort",
+        "High Longevity & Low Life Cycle Cost",
+        "Crack Resistance",
+        "Fire & Water Resistance",
+        "Chemical & Corrosion Resistance"
+      ],
+      "breeze_blocks_specs": {
+        "compressive_strength": "Greater than 50 MPa",
+        "material_composition": "High-quality white cement and quartz sand",
+        "reinforcement": "Glass fiber reinforced",
+        "surface_finish": "Grinded and finished on backside",
+        "anti_efflorescence": "White cement and quartz sand formulation eliminates white salt deposits"
+      }
+    },
+    "design_registrations": {
+      "toran": {
+        "registration_number": "431146-001",
+        "registered_with": "The Patent Office, Govt of India"
+      },
+      "ridge": {
+        "registration_number": "431145-001",
+        "registered_with": "The Patent Office, Govt of India"
+      }
+    },
+    "3d_file_downloads": {
+      "note": "SKP (SketchUp) and OBJ files available for architects and designers on select product pages",
+      "available_for": [
+        {
+          "product": "Serene",
+          "skp": "https://heyconcrete.com/wp-content/uploads/2026/03/Serene.skp",
+          "obj": "https://heyconcrete.com/wp-content/uploads/2026/03/Serene-Panels.obj"
+        },
+        {
+          "product": "Furrow",
+          "skp": "https://heyconcrete.com/wp-content/uploads/2026/03/Furrow.skp",
+          "obj": "https://heyconcrete.com/wp-content/uploads/2026/03/Furrow.obj"
+        },
+        {
+          "product": "Toran",
+          "skp": "https://heyconcrete.com/wp-content/uploads/2026/03/Toran.skp",
+          "obj": "https://heyconcrete.com/wp-content/uploads/2026/03/Toran.obj"
+        },
+        {
+          "product": "Ridge",
+          "skp": "https://heyconcrete.com/wp-content/uploads/2026/03/Ridge.skp",
+          "obj": "https://heyconcrete.com/wp-content/uploads/2026/03/Ridge.obj"
+        }
+      ]
+    }
+  },
+  "qa_pairs": [
+    {
+      "question": "When was Hey Concrete founded?",
+      "answer": "Hey Concrete was founded in 2019."
+    },
+    {
+      "question": "How many years has Hey Concrete been in the concrete industry?",
+      "answer": "Six years, as of 2025/26."
+    },
+    {
+      "question": "What is Hey Concrete's manufacturing process like?",
+      "answer": "Each step is entirely handmade and overseen by attentive eyes. A dedicated team handles mixing, molding, grinding, selecting, and treating panels from start through packaging - all done in-house before products leave the factory."
+    },
+    {
+      "question": "What is Hey Concrete's brand tagline?",
+      "answer": "'Walls that scream RAWyalty'"
+    },
+    {
+      "question": "Is Hey Concrete's manufacturing facility the largest in India?",
+      "answer": "Yes, the website claims it is India's biggest manufacturing facility, though the exact square footage is displayed only as an animated counter on the homepage."
+    },
+    {
+      "question": "Does Hey Concrete sell Wash Basins?",
+      "answer": "Wash Basins are listed in the navigation menu and footer as a product and shop category on the About page, and mentioned in the CII GreenPro product portfolio. However, the /wash-basins/ URL returns a 404 error, meaning the category is either upcoming or temporarily unavailable."
+    },
+    {
+      "question": "What is GreenPro certification and who issues it?",
+      "answer": "GreenPro is a Type-1 Ecolabel issued by the Confederation of Indian Industry (CII). It is globally recognized and accredited by the Global Ecolabelling Network (GEN) under GENICES. It certifies that Hey Concrete products meet high sustainability standards throughout their building lifecycle."
+    },
+    {
+      "question": "Which green building rating systems are Hey Concrete products compatible with?",
+      "answer": "IGBC, LEED, and GRIHA green building rating systems."
+    },
+    {
+      "question": "Is international shipping available from Hey Concrete?",
+      "answer": "Not yet. Hey Concrete currently ships within PAN India only and states they are exploring international shipping options."
+    },
+    {
+      "question": "How long does standard delivery take within India?",
+      "answer": "Orders ship within 1-2 business days of payment, and delivery takes 9-15 business days across PAN India."
+    },
+    {
+      "question": "How are shipping charges calculated?",
+      "answer": "Based on the weight, dimensions, and shipping address of the order. The estimated cost is shown during checkout."
+    },
+    {
+      "question": "What should a customer do if their order arrives damaged?",
+      "answer": "Contact Hey Concrete within 48 hours of receipt. They will arrange for a replacement or refund."
+    },
+    {
+      "question": "Can a customer cancel an order after it has been shipped?",
+      "answer": "No. Cancellations are not accepted post-shipment. The customer may return the item upon receipt subject to the return policy."
+    },
+    {
+      "question": "What is the cancellation window before shipment?",
+      "answer": "Customers must notify Hey Concrete within 24 hours of placing the order to receive a full refund before shipment."
+    },
+    {
+      "question": "Within how many days must a refund request be submitted?",
+      "answer": "Within 3-5 days of receiving the item."
+    },
+    {
+      "question": "How long does refund processing take once a return is received?",
+      "answer": "1-2 business days after receipt and verification of eligibility."
+    },
+    {
+      "question": "Are custom/bespoke orders eligible for refunds?",
+      "answer": "Generally not, unless there is a manufacturing defect or an error on Hey Concrete's part."
+    },
+    {
+      "question": "Are sale items eligible for returns at Hey Concrete?",
+      "answer": "No. Sale items are typically final sale and not eligible for returns or refunds."
+    },
+    {
+      "question": "Who pays for return shipping?",
+      "answer": "The customer bears return shipping costs unless the item was damaged or defective due to Hey Concrete's error."
+    },
+    {
+      "question": "What is the window to report a damaged or defective item?",
+      "answer": "Within 24 hours of receipt."
+    },
+    {
+      "question": "How many authorized partner locations does Hey Concrete have?",
+      "answer": "31 partner locations are listed, covering major Indian cities and one international location in Kathmandu, Nepal."
+    },
+    {
+      "question": "Does Hey Concrete have any international partner locations?",
+      "answer": "Yes, one - RUKMANI INTERNATIONAL in Maitidevi, Kathmandu, Nepal (PIN: 44600)."
+    },
+    {
+      "question": "What is the common contact number for all Hey Concrete partner showrooms?",
+      "answer": "+91 9251597924. All 31 partner locations share this number."
+    },
+    {
+      "question": "Who is the Hey Concrete partner in Mumbai?",
+      "answer": "BLUE LOFT FURNITURE STORE at F9, First Floor, Laxmi Mills Compound, Shakti Mills Lane, Mahalaxmi, Mumbai 400011."
+    },
+    {
+      "question": "Who is the Hey Concrete partner in Chennai?",
+      "answer": "CLAD CRAFT at 3rd Floor, 144, Purasaivakkam High Rd, Kilpauk Garden Colony, Purasaiwakkam, Chennai, Tamil Nadu 600010."
+    },
+    {
+      "question": "Who is the Hey Concrete partner in Jaipur?",
+      "answer": "BATH & LITES at B-32-A, 10B Scheme, Gopal Pura Bypass, Opp Safari Hotel, Jaipur, Rajasthan-302018."
+    },
+    {
+      "question": "Who is the Hey Concrete partner in Hyderabad?",
+      "answer": "TRANCEFORM at Plot number 1029, Rd Number 45, CBI Colony, Jubilee Hills, Hyderabad, Telangana 500033."
+    },
+    {
+      "question": "Who is the Hey Concrete partner in Kochi?",
+      "answer": "ARKNACK at No. 40/2510 A, Surabhi Road, Anchumana, Edappally P.O. Ernakulam, Kerala - 682024."
+    },
+    {
+      "question": "Who is the Hey Concrete partner in Pune?",
+      "answer": "SYMMETRY at Gala No. 1, Ground Floor, Opp. Vardhaman Sanskrutik Bhawan, Gangadham-Shatrunjay Mandir Road, Pune 411037."
+    },
+    {
+      "question": "Who is the Hey Concrete partner in Bengaluru?",
+      "answer": "Two partners in Bengaluru: MARUTHI CERAMICS (9th C Main Road, #311, 100 Feet Rd, HRBR Layout 1st Block, Banaswadi) and MARUTHI EMPORIA (74/1-2989-C, Mezzanine Floor, Main Road, Indiranagar)."
+    },
+    {
+      "question": "Does Hey Concrete offer a franchise opportunity?",
+      "answer": "Yes, Hey Concrete offers a 'Become a Franchisee' opportunity. They partner with contractors, distributors, and corporate clients. Applications can be submitted via the form at heyconcrete.com/partner-with-us/."
+    },
+    {
+      "question": "What are the key value propositions for partnering with Hey Concrete?",
+      "answer": "Premium Quality, Extensive Product Range, PAN India Delivery, Sustainable Practices, an Experienced Team of engineers and architects, and Tailored Solutions for custom projects."
+    },
+    {
+      "question": "What are Hey Concrete's two registered design patents?",
+      "answer": "Toran (Registration No. 431146-001) and Ridge (Registration No. 431145-001), both registered with The Patent Office, Govt of India."
+    },
+    {
+      "question": "What 3D file formats can architects download from Hey Concrete's website?",
+      "answer": "SKP (SketchUp) and OBJ files. Downloads are confirmed for Serene, Furrow, Toran, and Ridge panels."
+    },
+    {
+      "question": "What was the VILVAH STORE project about?",
+      "answer": "It was a retail store in Coimbatore where Hey Concrete carved custom leaf designs on the primary wall exactly as per the architect Ar. Sabaree Bala's drawing."
+    },
+    {
+      "question": "Which Hey Concrete product did Dr. Vyom Bolia use and for what purpose?",
+      "answer": "Dr. Vyom Bolia of Udaipur used WRAP panels for his office wall to achieve a concealed lighting effect. He stated the result exceeded his imagination and praised the product quality."
+    },
+    {
+      "question": "What did the client from Tripura (Mr. Arun) use Hey Concrete for?",
+      "answer": "Mr. Arun from Tripura used Hey Concrete for compound walls. He discovered the brand through Instagram and praised their customization capability from design development through execution."
+    },
+    {
+      "question": "What are the official office hours for Hey Concrete?",
+      "answer": "Monday to Saturday. Most pages state 10:00-19:00 but the About page states 9:00-19:00. There is a discrepancy in the opening time between pages."
+    },
+    {
+      "question": "How many projects are showcased in Hey Concrete's portfolio section?",
+      "answer": "11 projects, including Bolia's Residence, Bharat Suhalka's Residence, Fusion Store, The Last Order, Ashirwad Jewellers, and Ramkamal among others."
+    },
+    {
+      "question": "What does H-UHPC stand for?",
+      "answer": "H-UHPC stands for Hey Ultra-High Performance Concrete - a self-developed concrete formulation by Hey Concrete that synergizes strength, durability, and design sophistication."
+    },
+    {
+      "question": "What is the compressive strength of Hey Concrete Breeze Blocks?",
+      "answer": "Greater than 50 MPa."
+    },
+    {
+      "question": "Why do Hey Concrete Breeze Blocks not suffer from efflorescence (white salt deposits)?",
+      "answer": "Because they are made from high-quality white cement and quartz sand, which effectively eliminate efflorescence."
+    },
+    {
+      "question": "How are Breeze Blocks reinforced against damage during transport?",
+      "answer": "They are highly reinforced with glass fiber, providing exceptional strength and minimizing damage during transportation and handling."
+    },
+    {
+      "question": "What installation methods are used for concrete wall panels?",
+      "answer": "Direct fixing, mechanical fixing, or adhesive bonding, depending on project requirements. Installation is done by professionals."
+    },
+    {
+      "question": "Are Hey Concrete wall panels recyclable?",
+      "answer": "Yes, they are made from natural materials and can be recycled at the end of their lifespan."
+    },
+    {
+      "question": "How long do Hey Concrete wall panels last?",
+      "answer": "Several decades with proper maintenance. They are resistant to rot, decay, pests, and weathering."
+    },
+    {
+      "question": "What are the eight key technical properties of Hey Concrete wall panels?",
+      "answer": "Strength & Durability, Thin & Lightweight, Weather & UV Resistance, Energy Efficiency & Comfort, High Longevity & Low Life Cycle Cost, Crack Resistance, Fire & Water Resistance, and Chemical & Corrosion Resistance."
+    },
+    {
+      "question": "What social media platforms is Hey Concrete active on?",
+      "answer": "Facebook (facebook.com/heyconcrete), Instagram (instagram.com/heyconcrete), X/Twitter (x.com/hey_concrete), YouTube, and Pinterest."
+    },
+    {
+      "question": "What is the most-viewed blog post on Hey Concrete's website?",
+      "answer": "'Holi 2026 in Udaipur: Tradition Meets Contemporary Design' with 1,961 views, published February 11, 2026."
+    },
+    {
+      "question": "Has Hey Concrete raised external funding?",
+      "answer": "A YourStory article linked from their blog newsroom references Hey Concrete raising Rs 75 crore to scale sustainable concrete innovation (July 2025)."
+    },
+    {
+      "question": "What blog categories does Hey Concrete maintain?",
+      "answer": "Six categories: Blog (general), Breeze Blocks, Brick Claddings, News, Wall Murals, and Wall Panels."
+    },
+    {
+      "question": "Are cookies required to browse the Hey Concrete website?",
+      "answer": "Yes, according to the Privacy Policy, the browser must be configured to accept cookies to visit the website."
+    },
+    {
+      "question": "What personal data does Hey Concrete collect via contact forms?",
+      "answer": "Company name, address, contact person, telephone number, fax number, and email address."
+    },
+    {
+      "question": "Does Hey Concrete share user data with third parties?",
+      "answer": "They may share aggregated statistical analysis results with business partners. They may also contract with third parties to provide additional products/services requiring user data. Individual identifiable data is not posted publicly."
+    },
+    {
+      "question": "What is the Furrow panel's available flute width options?",
+      "answer": "75mm and 150mm flute widths."
+    },
+    {
+      "question": "What is the inspiration behind the Toran wall panel design?",
+      "answer": "The Toran panel is inspired by a verse from the Ramacharitmanas that describes the grandeur of a royal coronation, mentioning flags, banners, Torans (gateway arches), horses, and chariots - symbols of celebration and auspiciousness. It also features a provision for lighting at the base of the arch."
+    },
+    {
+      "question": "What is the inspiration behind the Ridge wall panel design?",
+      "answer": "The Ridge panel is inspired by elevated geological ridge formations with steep-sided shapes, creating a refined and majestic aesthetic."
+    },
+    {
+      "question": "Which Hey Concrete partner is located in Gurgaon?",
+      "answer": "DE CERAMICA at A-511, Sushant Lok Phase 1, Opp. IFFCO Chowk Metro Station, Gurgaon."
+    },
+    {
+      "question": "Which Hey Concrete partner is located in Ahmedabad?",
+      "answer": "LITHOS STUDIO at Shop no. 19 Aryabhoomi near MG Farm, Jodhpur Gham Road, Satellite, Ahmedabad 380015."
+    },
+    {
+      "question": "Is there a partner for Hey Concrete in Raipur?",
+      "answer": "Yes, LUXURY SURFACES at Solus Tower, 3rd Floor, Near Puma Showroom, Telibandha, Raipur 492001."
+    },
+    {
+      "question": "What does Hey Concrete's 'Serene' panel description say about its moisture properties?",
+      "answer": "Serene wall panels are described as hygroscopic - naturally absorbing and releasing moisture to ensure a balanced and comfortable indoor climate."
+    }
+  ]
+}

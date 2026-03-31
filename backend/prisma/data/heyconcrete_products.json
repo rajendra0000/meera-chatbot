@@ -1,0 +1,1159 @@
+{
+  "source": "https://heyconcrete.com",
+  "extracted_on": "2026-03-29",
+  "total_products": 62,
+  "categories": [
+    "Wall Panels (H-UHPC)",
+    "Wall Murals",
+    "Breeze Blocks",
+    "Brick Cladding"
+  ],
+  "products": [
+    {
+      "name": "Serene",
+      "url": "https://heyconcrete.com/wall-panels/serene-panels/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based (multiple sizes available)",
+      "description": "High-performance wall panels creating a serene environment. Features inhomogeneous surfaces and cloudy appearances emulating exposed concrete look. Hygroscopic material naturally absorbs and releases moisture.",
+      "best_for": "Calm premium living rooms and statement walls",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/Serene-wall-panel-1.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/serene-panels-dimensions.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/Plain.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/Porous.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/Natural.webp"
+      ],
+      "downloads": {
+        "skp": "https://heyconcrete.com/wp-content/uploads/2026/03/Serene.skp",
+        "obj": "https://heyconcrete.com/wp-content/uploads/2026/03/Serene-Panels.obj"
+      }
+    },
+    {
+      "name": "Furrow",
+      "url": "https://heyconcrete.com/wall-panels/furrow/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based; flute widths 75mm and 150mm",
+      "description": "Designed to echo the natural beauty of tilled land. Influenced by furrows formed by soil type and stream size. Available in flute widths of 75mm and 150mm.",
+      "best_for": "Textured contemporary feature walls",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2026/03/furrow-wall-panels.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/FURROW-2.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/Plain.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/Porous.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/Natural.webp"
+      ],
+      "downloads": {
+        "skp": "https://heyconcrete.com/wp-content/uploads/2026/03/Furrow.skp",
+        "obj": "https://heyconcrete.com/wp-content/uploads/2026/03/Furrow.obj"
+      }
+    },
+    {
+      "name": "Furrow 2.0",
+      "url": "https://heyconcrete.com/wall-panels/furrow-2-0/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "An evolved version of the Furrow panel with sharper linear definition. Suitable for both interior and exterior use.",
+      "best_for": "Sharper linear spaces and luxury foyers",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2026/03/COMPOUND-WALL.jpg-1.webp"
+      ]
+    },
+    {
+      "name": "Code",
+      "url": "https://heyconcrete.com/wall-panels/code/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Geometric wall panels with a bold modern pattern ideal for contemporary office and residential spaces.",
+      "best_for": "Geometric walls and modern offices",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/CODE.webp"
+      ]
+    },
+    {
+      "name": "Code 2.0",
+      "url": "https://heyconcrete.com/wall-panels/code-2-0/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Elevated version of Code panels featuring bold premium contemporary patterns for facades and interiors.",
+      "best_for": "Bold premium contemporary facades",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2026/03/image-65.webp"
+      ]
+    },
+    {
+      "name": "Toran",
+      "url": "https://heyconcrete.com/wall-panels/toran/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Design Registered with The Patent Office, Govt of India (431146-001). Inspired by a verse in the Ramacharitmanas describing the grandeur of coronation ceremonies. Features unique arch shape with lighting provision at the base.",
+      "best_for": "Indian-inspired accent walls",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/Hey-Toran.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/toran-2.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/Plain.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/Porous.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/Natural.webp"
+      ],
+      "downloads": {
+        "skp": "https://heyconcrete.com/wp-content/uploads/2026/03/Toran.skp",
+        "obj": "https://heyconcrete.com/wp-content/uploads/2026/03/Toran.obj"
+      }
+    },
+    {
+      "name": "Toran 2.0",
+      "url": "https://heyconcrete.com/wall-panels/toran-2-0/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "An evolved version of the heritage-inspired Toran, blending traditional arch motifs with modern design sensibility.",
+      "best_for": "Heritage-meets-modern residential spaces",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2024/10/toran-2-01.webp"
+      ]
+    },
+    {
+      "name": "Mini Toran",
+      "url": "https://heyconcrete.com/wall-panels/mini-toran/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based (compact)",
+      "description": "A compact version of the Toran panel, designed for corridors, niches, and accent wall sections.",
+      "best_for": "Compact accent walls, corridors and niches",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2026/03/image-41.webp"
+      ]
+    },
+    {
+      "name": "Cruve",
+      "url": "https://heyconcrete.com/wall-panels/cruve/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Elegantly curved concrete wall panels designed to create flowing, organic feature walls.",
+      "best_for": "Curved feature walls and premium lounges",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2026/03/image-83.webp"
+      ]
+    },
+    {
+      "name": "Crest",
+      "url": "https://heyconcrete.com/wall-panels/crest/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Dramatic concrete panels with a crest-like profile for premium reception walls and lobby installations.",
+      "best_for": "Reception walls, hotel lobbies and premium living rooms",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2026/03/image-56.webp"
+      ]
+    },
+    {
+      "name": "Glide",
+      "url": "https://heyconcrete.com/wall-panels/glide/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Smooth flowing concrete panels that evoke a sense of movement and fluidity in contemporary interiors.",
+      "best_for": "Contemporary interiors with flowing aesthetics",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2026/03/image-47.webp"
+      ]
+    },
+    {
+      "name": "Sinuora",
+      "url": "https://heyconcrete.com/wall-panels/sinuora/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Sinuous wave-inspired concrete panels ideal for boutique hotels, spas, and high-end residential spaces.",
+      "best_for": "Boutique hotels, spas and luxury residences",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2026/03/image-6.webp"
+      ]
+    },
+    {
+      "name": "N'Verse",
+      "url": "https://heyconcrete.com/wall-panels/nverse/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Avant-garde concrete panels with an inverse-relief design creating bold depth and visual intrigue.",
+      "best_for": "Avant-garde interiors and statement commercial walls",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2026/03/image-26.webp"
+      ]
+    },
+    {
+      "name": "Heyline",
+      "url": "https://heyconcrete.com/wall-panels/heyline/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Clean minimal linear concrete panels for understated sophisticated interiors.",
+      "best_for": "Minimalist interiors and neutral palette spaces",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2026/03/image-33.webp"
+      ]
+    },
+    {
+      "name": "Petal",
+      "url": "https://heyconcrete.com/wall-panels/petal/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Organic petal-shaped relief concrete panels adding softness and a nature-inspired quality to interiors.",
+      "best_for": "Soft organic bedrooms and lounges",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2026/03/image-23.webp"
+      ]
+    },
+    {
+      "name": "Dune",
+      "url": "https://heyconcrete.com/wall-panels/dune/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Desert-inspired minimal concrete panels with smooth undulating surfaces, ideal for hospitality and residential interiors.",
+      "best_for": "Minimal textured walls and hospitality spaces",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/dune.webp"
+      ]
+    },
+    {
+      "name": "Scoop",
+      "url": "https://heyconcrete.com/wall-panels/scoop-wall-panels/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Bold scoop-relief concrete panels for dramatic accent walls and commercial installations.",
+      "best_for": "Bold accent walls and commercial projects",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/SCOOP-1.webp"
+      ]
+    },
+    {
+      "name": "Endless",
+      "url": "https://heyconcrete.com/wall-panels/endless/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Seamlessly repeating pattern panels that create a continuous flowing design language across premium interiors.",
+      "best_for": "Flowing design language in premium interiors",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2026/03/image-80.webp",
+        "https://heyconcrete.com/wp-content/uploads/2026/03/image-76.webp"
+      ]
+    },
+    {
+      "name": "Legato",
+      "url": "https://heyconcrete.com/wall-panels/legato/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Inspired by musical notation, Legato panels create a sophisticated rhythmic pattern on wall surfaces.",
+      "best_for": "Sophisticated rhythmic wall surfaces",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/legato-1.webp"
+      ]
+    },
+    {
+      "name": "Recursion",
+      "url": "https://heyconcrete.com/wall-panels/recursion-wall-panels/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Panels with a recursive geometric design that creates visual depth and intrigue for feature walls.",
+      "best_for": "Feature walls requiring visual depth and intrigue",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/recursion.webp"
+      ]
+    },
+    {
+      "name": "Billow",
+      "url": "https://heyconcrete.com/wall-panels/billow-wall-panels/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Billowing wave-form concrete panels for dramatic commercial feature walls and concept stores.",
+      "best_for": "Concept stores and dramatic feature walls",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2026/02/Concept-Store-Feature-Wall-Billow-wall-panels-scaled.jpeg"
+      ]
+    },
+    {
+      "name": "Parallel",
+      "url": "https://heyconcrete.com/wall-panels/parallel-wall-panel/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Clean parallel-groove concrete panels ideal for contemporary offices, corridors, and modern residences.",
+      "best_for": "Offices, corridors and contemporary residences",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/PARALLEL1.webp"
+      ]
+    },
+    {
+      "name": "Entangle",
+      "url": "https://heyconcrete.com/wall-panels/entangle-wall-panels/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Interlocking pattern concrete panels that create depth and visual narrative for premium interiors.",
+      "best_for": "Premium interiors seeking depth and narrative",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/Entangle-Interior1.webp"
+      ]
+    },
+    {
+      "name": "Drape",
+      "url": "https://heyconcrete.com/wall-panels/drape-wall-panels/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Fabric-drape inspired concrete panels for luxury bedrooms, spas, and bespoke hospitality interiors.",
+      "best_for": "Luxury bedrooms, spas and bespoke hospitality interiors",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/DRAPE1-1.webp"
+      ]
+    },
+    {
+      "name": "Ridge",
+      "url": "https://heyconcrete.com/wall-panels/ridge-wall-panels/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Design Registered with The Patent Office, Govt of India (431145-001). Inspired by elevated geological ridge formations with steep-sided shapes. Creates a refined and majestic aesthetic.",
+      "best_for": "Vertical drama in living rooms and lobbies",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2024/08/ridge.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/08/Ridge-dimensions.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/Plain.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/Porous.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/Natural.webp"
+      ],
+      "downloads": {
+        "skp": "https://heyconcrete.com/wp-content/uploads/2026/03/Ridge.skp",
+        "obj": "https://heyconcrete.com/wp-content/uploads/2026/03/Ridge.obj"
+      }
+    },
+    {
+      "name": "Torus",
+      "url": "https://heyconcrete.com/wall-panels/torus/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Circular torus-geometry inspired concrete panels for premium residential and hospitality feature walls.",
+      "best_for": "Premium residential and hospitality feature walls",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2026/03/image-8.webp"
+      ]
+    },
+    {
+      "name": "Ivy",
+      "url": "https://heyconcrete.com/wall-panels/ivy-panels/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Nature-inspired ivy leaf pattern panels for biophilic interiors and wellness-oriented spaces.",
+      "best_for": "Biophilic interiors and nature-inspired spaces",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/ivy.webp"
+      ]
+    },
+    {
+      "name": "Wedge",
+      "url": "https://heyconcrete.com/wall-panels/wedge-wall-panels/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Angular wedge-profile concrete panels for bold statements in commercial and residential settings.",
+      "best_for": "Commercial spaces and statement residential walls",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/WEDGE-2.webp"
+      ]
+    },
+    {
+      "name": "Crown",
+      "url": "https://heyconcrete.com/wall-panels/crown-panels/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Regal crown-pattern concrete panels for grand entrance areas and luxury entryways.",
+      "best_for": "Grand statement areas and luxury entryways",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/CROWN-1.webp"
+      ]
+    },
+    {
+      "name": "Matrix",
+      "url": "https://heyconcrete.com/wall-panels/matrix-wall-panels/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Grid-based geometric matrix pattern panels for strong architectural statements in commercial use.",
+      "best_for": "Strong geometric statements and commercial use",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/MATRIX-1.webp"
+      ]
+    },
+    {
+      "name": "Tetra",
+      "url": "https://heyconcrete.com/wall-panels/tetra/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Tetrahedron-inspired angular concrete panels for feature walls in premium offices and modern residences.",
+      "best_for": "Angular feature walls and premium offices",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/tetra.webp"
+      ]
+    },
+    {
+      "name": "Parametric",
+      "url": "https://heyconcrete.com/wall-panels/parametric/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Algorithmically-inspired parametric design panels for design-forward interiors and architectural showpieces.",
+      "best_for": "Design-forward interiors and architectural showpieces",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/Paramatric-landscape.webp"
+      ]
+    },
+    {
+      "name": "Delta",
+      "url": "https://heyconcrete.com/wall-panels/delta-wall-panels/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Triangle-delta pattern concrete panels for premium residential and commercial feature walls.",
+      "best_for": "Premium residential and commercial feature walls",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/delta-panels.webp"
+      ]
+    },
+    {
+      "name": "Linear Brass",
+      "url": "https://heyconcrete.com/wall-panels/linear-brass-panels/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Premium concrete panels with brass inlay detailing for ultra-luxury interiors and high-end hospitality spaces.",
+      "best_for": "Ultra-luxury interiors and high-end hospitality spaces",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/LINEAR_BRASS3.webp"
+      ]
+    },
+    {
+      "name": "Curve",
+      "url": "https://heyconcrete.com/wall-panels/curve-panels/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Gently curved concrete panels for residential and wellness-focused interior spaces.",
+      "best_for": "Residential and wellness interiors",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/CURVE-INTERIOR.webp"
+      ]
+    },
+    {
+      "name": "Prism",
+      "url": "https://heyconcrete.com/wall-panels/prism-3d-panels/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "3D prism-faceted concrete panels that interact dynamically with light for premium commercial spaces.",
+      "best_for": "Lighting-driven interiors and premium commercial spaces",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/09/prism.jpg"
+      ]
+    },
+    {
+      "name": "Rugged Wood Planks",
+      "url": "https://heyconcrete.com/wall-panels/rugged-wood-planks/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based (plank format)",
+      "description": "Concrete panels with a rugged wood plank texture, perfect for rustic-modern interiors, cafes, or restaurant walls.",
+      "best_for": "Rustic-modern interiors and cafe or restaurant walls",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/rug-wood-planks.webp"
+      ]
+    },
+    {
+      "name": "Corner Fold",
+      "url": "https://heyconcrete.com/wall-panels/corner-fold/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Corner panel",
+      "description": "Specially designed corner panels to enable complete room wraps and seamless 90-degree corner treatments for any wall panel series.",
+      "best_for": "Complete room wraps and seamless corner treatments",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/corner-1.webp"
+      ]
+    },
+    {
+      "name": "Edge Fold",
+      "url": "https://heyconcrete.com/wall-panels/edge-fold/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Edge panel",
+      "description": "Edge termination panels for clean, professional finish at the boundaries of wall panel installations.",
+      "best_for": "Edge termination for premium wall panel installations",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2024/07/EDGE.webp"
+      ]
+    },
+    {
+      "name": "Wrap",
+      "url": "https://heyconcrete.com/wall-panels/wrap-wall-panels/",
+      "category": "Wall Panels (H-UHPC)",
+      "price": "Rs.400+ per sqft",
+      "dimensions": "Panel based",
+      "description": "Concrete panels with a special provision for concealed lighting, enabling dramatic illuminated wall effects in offices and premium residences.",
+      "best_for": "Concealed lighting walls in offices and premium residences",
+      "textures": [
+        "Plain",
+        "Porous",
+        "Natural"
+      ],
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/wrap-1.webp"
+      ]
+    },
+    {
+      "name": "Veetraagi",
+      "url": "https://heyconcrete.com/product/veetraagi/",
+      "category": "Wall Murals",
+      "price": "Rs.11,000 (set of 3, incl. taxes and delivery)",
+      "original_price": "Rs.14,500",
+      "dimensions": "Set of 3 panels",
+      "description": "Inspired by the Sanskrit term Veetaraaga - a person free from attachment living in total harmony. Captures the essence of inner absolute peace. Crafted from ultra-high performance concrete with intricate detail.",
+      "best_for": "Character-rich walls and boutique interiors",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2024/07/TRL00284-600x450.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/TRL00150-640x427.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/PHOTO-2023-08-24-18-29-21-640x360.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/Face_5.1-640x480.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/07/VEETRAAGI_diemsion-640x452.webp"
+      ]
+    },
+    {
+      "name": "Shringaar",
+      "url": "https://heyconcrete.com/product/shringaar/",
+      "category": "Wall Murals",
+      "price": "Rs.11,000 (set of 3, incl. taxes and delivery)",
+      "original_price": "Rs.14,500",
+      "dimensions": "Set of 3 panels",
+      "description": "Shringaar translates to adornment and beautification. A wall mural collection embodying elegance and grace for premium residential and hospitality spaces.",
+      "best_for": "Elegant residential statements and hospitality nooks",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2024/07/TRL00290-600x450.webp"
+      ]
+    },
+    {
+      "name": "Samwad",
+      "url": "https://heyconcrete.com/product/samwad/",
+      "category": "Wall Murals",
+      "price": "Rs.11,000 (set of 4, incl. taxes and delivery)",
+      "original_price": "Rs.14,500",
+      "dimensions": "Set of 4 panels",
+      "description": "Samwad means dialogue or conversation in Hindi. A storytelling wall mural for cultural and narrative-rich spaces.",
+      "best_for": "Storytelling feature walls and cultural spaces",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2024/07/TRL00249-600x450.webp"
+      ]
+    },
+    {
+      "name": "Poorak",
+      "url": "https://heyconcrete.com/product/poorak/",
+      "category": "Wall Murals",
+      "price": "Rs.7,100 (set of 2, incl. taxes and delivery)",
+      "original_price": "Rs.11,100",
+      "dimensions": "Set of 2 panels",
+      "description": "Poorak means complementary. A compact yet powerful mural set ideal for premium corner statements and elegant alcoves.",
+      "best_for": "Compact premium statements and elegant corners",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2024/07/TRL00318-600x450.webp"
+      ]
+    },
+    {
+      "name": "Katha",
+      "url": "https://heyconcrete.com/product/katha/",
+      "category": "Wall Murals",
+      "price": "Rs.7,100 (set of 2, incl. taxes and delivery)",
+      "original_price": "Rs.11,100",
+      "dimensions": "Set of 2 panels",
+      "description": "Katha means story. A narrative-led mural set for cultural spaces, restaurants, and character-driven feature walls.",
+      "best_for": "Narrative-led cultural spaces and feature walls",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2024/07/TRL00085-600x450.webp"
+      ]
+    },
+    {
+      "name": "GUPP",
+      "url": "https://heyconcrete.com/product/gupp/",
+      "category": "Wall Murals",
+      "price": "Rs.7,100 (set of 2, incl. taxes and delivery)",
+      "original_price": "Rs.11,100",
+      "dimensions": "Set of 2 panels",
+      "description": "GUPP means gossip or light-hearted conversation in Hindi. Playful mural panels for creative rooms and casual conversation corners.",
+      "best_for": "Playful conversation corners and creative rooms",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2024/07/TRL00106-600x450.webp"
+      ]
+    },
+    {
+      "name": "Ashta Prahar",
+      "url": "https://heyconcrete.com/product/ashta-prahar/",
+      "category": "Wall Murals",
+      "price": "Rs.47,000 (set of 2, incl. taxes and delivery)",
+      "original_price": "Rs.52,500",
+      "dimensions": "Set of 2 large panels",
+      "description": "Ashta Prahar meaning eight sessions of the day. A grand art-led mural set representing the cycles of time. Suitable for living rooms and sacred spaces.",
+      "best_for": "Art-led living rooms and pooja-adjacent spaces",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2024/07/TRL00243-600x450.webp"
+      ]
+    },
+    {
+      "name": "Abhivyakti",
+      "url": "https://heyconcrete.com/product/abhivyakti/",
+      "category": "Wall Murals",
+      "price": "Rs.9,000 (set of 3, incl. taxes and delivery)",
+      "original_price": "Rs.12,000",
+      "dimensions": "Set of 3 panels",
+      "description": "Abhivyakti means expression. An expressive mural collection for curated residential spaces and art-conscious interiors.",
+      "best_for": "Expressive residential walls and curated spaces",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2021/04/TRL00310-600x450.webp"
+      ]
+    },
+    {
+      "name": "Breeze Block-01",
+      "url": "https://heyconcrete.com/breeze-blocks/",
+      "category": "Breeze Blocks",
+      "price": "Rs.200-400 per piece",
+      "dimensions": "200x200x60mm",
+      "description": "Concrete breeze block enabling free airflow. Made from high-quality white cement and quartz sand. Compressive strength greater than 50 MPa. Glass fiber reinforced for exceptional strength.",
+      "best_for": "Semi-open partitions and breezy facades",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/01/BB-01-2-scaled.webp"
+      ]
+    },
+    {
+      "name": "Breeze Block-02",
+      "url": "https://heyconcrete.com/breeze-blocks/",
+      "category": "Breeze Blocks",
+      "price": "Rs.200-400 per piece",
+      "dimensions": "200x200x60mm",
+      "description": "Concrete breeze block for ventilated boundaries with a tropical aesthetic. White cement and quartz sand construction eliminates efflorescence.",
+      "best_for": "Ventilated boundaries and tropical aesthetics",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/01/BB-021-scaled.webp"
+      ]
+    },
+    {
+      "name": "Breeze Block-03",
+      "url": "https://heyconcrete.com/breeze-blocks/",
+      "category": "Breeze Blocks",
+      "price": "Rs.200-400 per piece",
+      "dimensions": "200x200x60mm",
+      "description": "Facade screening breeze block with a unique pattern for outdoor zoning and architectural screening.",
+      "best_for": "Facade screening and outdoor zoning",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/01/BB-031-scaled.webp"
+      ]
+    },
+    {
+      "name": "Breeze Block-04",
+      "url": "https://heyconcrete.com/breeze-blocks/",
+      "category": "Breeze Blocks",
+      "price": "Rs.200-400 per piece",
+      "dimensions": "200x200x60mm",
+      "description": "Interior partition breeze block ideal for dining areas and commercial spaces with decorative flair.",
+      "best_for": "Interior partitions in dining areas and commercial spaces",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/01/BB-041-scaled.webp"
+      ]
+    },
+    {
+      "name": "Breeze Block-05",
+      "url": "https://heyconcrete.com/breeze-blocks/",
+      "category": "Breeze Blocks",
+      "price": "Rs.200-400 per piece",
+      "dimensions": "200x200x60mm",
+      "description": "Garden and landscape breeze block with a design that complements outdoor installations and green settings.",
+      "best_for": "Garden installations and landscape settings",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/01/BB-05-1-scaled.webp"
+      ]
+    },
+    {
+      "name": "Breeze Block-06",
+      "url": "https://heyconcrete.com/breeze-blocks/",
+      "category": "Breeze Blocks",
+      "price": "Rs.200-400 per piece",
+      "dimensions": "200x200x60mm",
+      "description": "Hospitality dining area breeze block creating elegant patterned screens and feature walls.",
+      "best_for": "Hospitality dining areas and feature walls",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/01/BB-06-1-scaled.webp"
+      ]
+    },
+    {
+      "name": "Breeze Block-07",
+      "url": "https://heyconcrete.com/breeze-blocks/",
+      "category": "Breeze Blocks",
+      "price": "Rs.200-400 per piece",
+      "dimensions": "200x200x60mm",
+      "description": "Contemporary office screening breeze block for spatial definition and visual interest in modern workspaces.",
+      "best_for": "Contemporary office screening and spatial definition",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/01/BB-07-scaled.webp"
+      ]
+    },
+    {
+      "name": "Breeze Block-08",
+      "url": "https://heyconcrete.com/breeze-blocks/",
+      "category": "Breeze Blocks",
+      "price": "Rs.200-400 per piece",
+      "dimensions": "200x300x60mm",
+      "description": "Larger format breeze block for reception areas and premium commercial entrances requiring a commanding presence.",
+      "best_for": "Reception areas and premium commercial entrances",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/01/BB-08-scaled.webp"
+      ]
+    },
+    {
+      "name": "Breeze Block-09",
+      "url": "https://heyconcrete.com/breeze-blocks/",
+      "category": "Breeze Blocks",
+      "price": "Rs.200-400 per piece",
+      "dimensions": "200x200x60mm",
+      "description": "Lattice-style breeze block for decorative screening in both residential and commercial applications.",
+      "best_for": "Residential and commercial lattice screening",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/11/BB-09-2-2048x1366-1.webp"
+      ]
+    },
+    {
+      "name": "Breeze Block-10",
+      "url": "https://heyconcrete.com/breeze-blocks/",
+      "category": "Breeze Blocks",
+      "price": "Rs.200-400 per piece",
+      "dimensions": "200x200x60mm",
+      "description": "Poolside and outdoor landscape breeze block designed for water-adjacent environments and open-air screening.",
+      "best_for": "Poolside screening and outdoor landscape walls",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/01/BB-10-scaled.webp"
+      ]
+    },
+    {
+      "name": "Breeze Block-11",
+      "url": "https://heyconcrete.com/breeze-blocks/",
+      "category": "Breeze Blocks",
+      "price": "Rs.200-400 per piece",
+      "dimensions": "200x300x80mm",
+      "description": "Large-scale W-shaped architectural screen block for parking structures and large-scale facade applications.",
+      "best_for": "Parking structures and large-scale architectural screens",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/01/BB-11-scaled.webp"
+      ]
+    },
+    {
+      "name": "Breeze Block-12",
+      "url": "https://heyconcrete.com/breeze-blocks/",
+      "category": "Breeze Blocks",
+      "price": "Rs.200-400 per piece",
+      "dimensions": "200x150x80mm",
+      "description": "Compact architectural screen block for lightweight partitions and smaller-scale screening applications.",
+      "best_for": "Compact architectural screens and lightweight partitions",
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2025/01/BB-11-1-scaled.webp"
+      ]
+    },
+    {
+      "name": "Standard Brick Cladding",
+      "url": "https://heyconcrete.com/brick-cladding/",
+      "category": "Brick Cladding",
+      "price": "Under Rs.200 per sqft",
+      "dimensions": "228x75x10mm",
+      "description": "Lightweight brick cladding available in 12 captivating colors and 2 exquisite textures. Easy to install, weather-resistant, fire-proof, and termite-proof. Perfect for contemporary facades and feature walls.",
+      "best_for": "Budget-friendly facades, cafes, and feature walls",
+      "available_colors": 12,
+      "available_textures": 2,
+      "images": [
+        "https://heyconcrete.com/wp-content/uploads/2024/08/image00001.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/08/image00002.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/08/image00003.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/08/image00004.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/08/image00005.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/08/image00006.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/08/image00010.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/08/image00012.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/08/image00014.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/08/image00015.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/08/image00017.webp",
+        "https://heyconcrete.com/wp-content/uploads/2024/08/image00019.webp"
+      ]
+    }
+  ],
+  "shared_color_palette": {
+    "name": "Shades of Hey",
+    "note": "All Wall Panels are available in these 19 standard colors. Custom colors also available on request.",
+    "colors": [
+      {
+        "name": "Ash Grey",
+        "ral": "#7032",
+        "swatch_url": "https://heyconcrete.com/wp-content/uploads/2026/03/ash.jpg",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Ash-Grey.webp"
+      },
+      {
+        "name": "Beton Grey",
+        "ral": "#7038",
+        "swatch_url": "https://heyconcrete.com/wp-content/uploads/2026/03/beton.jpg",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Beton-Grey.webp"
+      },
+      {
+        "name": "Solid Grey",
+        "ral": "#7004",
+        "swatch_url": "https://heyconcrete.com/wp-content/uploads/2026/03/solid.jpg",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Solid-Grey.webp"
+      },
+      {
+        "name": "Smoke Grey",
+        "ral": "#7046",
+        "swatch_url": "https://heyconcrete.com/wp-content/uploads/2026/03/smoke.jpg",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Smoke-Grey.webp"
+      },
+      {
+        "name": "Slate Grey",
+        "ral": "#7031",
+        "swatch_url": "https://heyconcrete.com/wp-content/uploads/2026/03/slate.jpg",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Slate-Grey.webp"
+      },
+      {
+        "name": "Charcoal Grey",
+        "ral": "#7015",
+        "swatch_url": "https://heyconcrete.com/wp-content/uploads/2026/03/charcoal.jpg",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Charcoal-Grey.webp"
+      },
+      {
+        "name": "Cobalt Blue",
+        "ral": "#5008",
+        "swatch_url": "https://heyconcrete.com/wp-content/uploads/2026/03/cobalt.jpg",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Cobalt-Blue.webp"
+      },
+      {
+        "name": "Cyan",
+        "ral": "#6021",
+        "swatch_url": "https://heyconcrete.com/wp-content/uploads/2026/03/cyan.jpg",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Cyan.webp"
+      },
+      {
+        "name": "Pensive Green",
+        "ral": "#6011",
+        "swatch_url": "https://heyconcrete.com/wp-content/uploads/2026/03/pensive.jpg",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Pensive-Green.webp"
+      },
+      {
+        "name": "Opal White",
+        "ral": "#9012",
+        "swatch_url": "https://heyconcrete.com/wp-content/uploads/2026/03/opal.jpg",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Opal-White.webp"
+      },
+      {
+        "name": "Mocha",
+        "ral": "Custom",
+        "swatch_url": "https://heyconcrete.com/wp-content/uploads/2026/03/mocha.jpg",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Mocha.webp"
+      },
+      {
+        "name": "Upscale Ivory",
+        "ral": "#1015",
+        "swatch_url": "https://heyconcrete.com/wp-content/uploads/2026/03/upscale.jpg",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Upscale-Ivory.webp"
+      },
+      {
+        "name": "Worldly Beige",
+        "ral": "#1019",
+        "swatch_url": "https://heyconcrete.com/wp-content/uploads/2026/03/wordly.jpg",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Worldly-Beige.webp"
+      },
+      {
+        "name": "Wooden Brown",
+        "ral": "#8024",
+        "swatch_url": "https://heyconcrete.com/wp-content/uploads/2026/03/wooden.jpg",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Wooden-Brown.webp"
+      },
+      {
+        "name": "Puddle Brown",
+        "ral": "Custom",
+        "swatch_url": "https://heyconcrete.com/wp-content/uploads/2026/03/puddle.jpg",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Puddle-Brown.webp"
+      },
+      {
+        "name": "Earthy Pink",
+        "ral": "#4009",
+        "swatch_url": "https://heyconcrete.com/wp-content/uploads/2026/03/earthy-pink.jpg",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Earthy-pink.webp"
+      },
+      {
+        "name": "Rouge Red",
+        "ral": "#8004",
+        "swatch_url": "https://heyconcrete.com/wp-content/uploads/2026/03/rough-red.jpg",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Rough-REd.webp"
+      },
+      {
+        "name": "Ochre",
+        "ral": "#8001",
+        "swatch_url": "https://heyconcrete.com/wp-content/uploads/2026/03/ochre.jpg",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Ochre.webp"
+      },
+      {
+        "name": "Mellow Green",
+        "ral": "Custom",
+        "preview_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Mellow-Green.webp"
+      }
+    ]
+  },
+  "shared_textures": [
+    {
+      "name": "Plain",
+      "description": "Smooth, solid and fine. Features small inclusions and even thickness.",
+      "image_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Plain.webp"
+    },
+    {
+      "name": "Porous",
+      "description": "Intriguing and sought-after. Fine natural concrete surface with even thickness and porosity.",
+      "image_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Porous.webp"
+    },
+    {
+      "name": "Natural",
+      "description": "Authentic, organic surface with consistent texture and natural variations.",
+      "image_url": "https://heyconcrete.com/wp-content/uploads/2024/07/Natural.webp"
+    }
+  ],
+  "company_info": {
+    "brand": "Hey Concrete",
+    "legal_entity": "Wabi Sabi Surfaces Private Limited",
+    "address": "JMRX+CRR, Bedla, Bargaon rural, Udaipur, Rajasthan 313001, India",
+    "phone": "+91 810 771 9987",
+    "email": "info@heyconcrete.com",
+    "website": "https://heyconcrete.com",
+    "whatsapp": "https://wa.link/0h7dez",
+    "certifications": [
+      "CII-Green Pro Certified",
+      "ISO 9001:2015",
+      "ISO 14001:2015",
+      "ISO 45001:2018",
+      "Zero Waste",
+      "Make in India",
+      "Handcrafted"
+    ],
+    "material": "H-UHPC (High Performance Ultra High Performance Concrete)",
+    "catalogue_pdf": "https://heyconcrete.com/wp-content/uploads/2026/03/Surfaces_by_Hey-25-26.pdf"
+  }
+}
