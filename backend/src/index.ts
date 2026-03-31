@@ -23,10 +23,12 @@ app.use(express.json({
 }));
 
 app.get("/", (_req, res) => {
+  console.log("[Health Check] Root '/' endpoint was hit by proxy.");
   res.json({ status: "ok", message: "Hey Concrete API is running" });
 });
 
 app.get("/health", (_req, res) => {
+  console.log("[Health Check] '/health' endpoint was hit by proxy.");
   res.json({ status: "ok", timestamp: new Date().toISOString(), uptime: process.uptime() });
 });
 
