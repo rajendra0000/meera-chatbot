@@ -46,6 +46,23 @@ export class StateMachineService {
       };
     }
 
+    if (intent.intent === "PURCHASE_INTENT") {
+      const hasCity = typeof nextData.city === "string" && nextData.city.trim().length > 0;
+      const nextStep = hasCity ? ChatStep.COMPLETED : ChatStep.CITY;
+
+      return {
+        nextStep,
+        status: nextStep === ChatStep.COMPLETED ? ConversationStatus.COMPLETED : ConversationStatus.ACTIVE,
+        appliedUpdates,
+        rejectedUpdates,
+        retryCountDelta: 0,
+        handoverTrigger: null,
+        browseMode: "default",
+        collectedData: nextData,
+        reason: hasCity ? "purchase_follow_up" : "purchase_needs_city",
+      };
+    }
+
     if (intent.intent === "SKIP" && SKIPPABLE_STEPS.has(currentStep)) {
       if (currentStep === ChatStep.CITY && !nextData.city) nextData.city = "Unknown";
       if (currentStep === ChatStep.STYLE && !nextData.style) nextData.style = "Not Sure";

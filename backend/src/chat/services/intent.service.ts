@@ -72,6 +72,26 @@ const CONTEXT_HINTS = [
   "project",
 ] as const;
 
+const PURCHASE_INTENT_PATTERNS = [
+  "where to buy",
+  "how can i purchase",
+  "how do i purchase",
+  "how to proceed",
+  "how do i proceed",
+  "want to buy",
+  "want to purchase",
+  "ready to order",
+  "place order",
+  "place an order",
+  "book order",
+  "visit showroom",
+  "showroom",
+  "purchase",
+  "order",
+  "buy",
+  "visit",
+] as const;
+
 function hasDomainSignal(message: string) {
   const lowered = normalizeLower(message);
   return DOMAIN_KEYWORDS.some((keyword) => lowered.includes(keyword));
@@ -84,6 +104,11 @@ function hasContextHint(message: string) {
 
 function hasRelevantHint(message: string) {
   return hasDomainSignal(message) || hasContextHint(message);
+}
+
+function detectPurchaseIntent(message: string) {
+  const lowered = normalizeLower(message);
+  return PURCHASE_INTENT_PATTERNS.some((pattern) => lowered.includes(pattern));
 }
 
 function inferIntentConfidence(messageType: string | null, fieldUpdateCount: number, rawConfidence: unknown) {
@@ -120,7 +145,13 @@ function shouldMarkIrrelevant(message: string, result: IntentResult) {
     return false;
   }
 
-  if (result.intent === "HANDOVER" || result.intent === "RESET" || result.intent === "SKIP" || result.intent === "GREETING") {
+  if (
+    result.intent === "HANDOVER" ||
+    result.intent === "PURCHASE_INTENT" ||
+    result.intent === "RESET" ||
+    result.intent === "SKIP" ||
+    result.intent === "GREETING"
+  ) {
     return false;
   }
 
@@ -144,6 +175,10 @@ function shouldMarkIrrelevant(message: string, result: IntentResult) {
 }
 
 function normalizeRelevance(message: string, currentStep: ChatStep, result: IntentResult) {
+  if (result.intent === "PURCHASE_INTENT") {
+    return result;
+  }
+
   if (result.intent === "SMALL_TALK" && currentStep !== ChatStep.COMPLETED && hasRelevantHint(message)) {
     result.intent = "STEP_ANSWER";
     result.confidence = Math.max(result.confidence, 0.6);
@@ -323,6 +358,10 @@ function fallbackIntent(message: string, currentStep: ChatStep, currentData: Col
     return toIntentResult({ intent: "SKIP", confidence: 0.95, fallbackUsed: true });
   }
 
+  if (detectPurchaseIntent(message)) {
+    return toIntentResult({ intent: "PURCHASE_INTENT", confidence: 0.96, fallbackUsed: true });
+  }
+
   if (["more images", "more photos", "more pictures", "more image", "more photo"].some((pattern) => lowered.includes(pattern))) {
     return toIntentResult({ intent: "MORE_IMAGES", confidence: 0.9, fallbackUsed: true });
   }
@@ -370,6 +409,10 @@ export class IntentService {
 
     if (params.forcedIntent) {
       return toIntentResult({ intent: params.forcedIntent, handover: false, fallbackUsed: true });
+    }
+
+    if (detectPurchaseIntent(params.message)) {
+      return toIntentResult({ intent: "PURCHASE_INTENT", confidence: 0.96, fallbackUsed: true });
     }
 
     const llmFailures: string[] = [];

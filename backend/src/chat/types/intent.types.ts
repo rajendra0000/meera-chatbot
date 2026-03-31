@@ -4,6 +4,7 @@ export const CHAT_INTENTS = [
   "SHOW_PRODUCTS",
   "MORE_PRODUCTS",
   "MORE_IMAGES",
+  "PURCHASE_INTENT",
   "HANDOVER",
   "RESET",
   "SKIP",

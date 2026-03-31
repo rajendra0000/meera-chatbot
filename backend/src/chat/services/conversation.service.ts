@@ -21,6 +21,17 @@ import { withRetries } from "../utils/retry.util.js";
 import { prepareLeadUpsert } from "../../services/lead.service.js";
 
 const CONVERSATION_WRITE_ATTEMPTS = 3;
+const NON_RECOMMEND_INTENTS = new Set<string>([
+  "FAQ",
+  "IRRELEVANT",
+  "SMALL_TALK",
+  "SECURITY_ATTACK",
+  "EMPTY",
+  "SPAM",
+  "RESET",
+  "PURCHASE_INTENT",
+] as const);
+const RECOMMENDATION_REFRESH_FIELDS = new Set(["productType", "budget"] as const);
 
 function safePromptBundle(bundle: Awaited<ReturnType<ChatRuntimeDeps["getActivePromptBundle"]>>) {
   return bundle ?? {
@@ -61,6 +72,18 @@ function isRetryableConversationWriteError(error: unknown) {
   }
 
   return error instanceof Error && error.message.includes("P2028");
+}
+
+function shouldRefreshRecommendations(input: {
+  currentStep: ChatStep;
+  intent: string;
+  appliedUpdates: Array<{ field: string }>;
+}) {
+  return (
+    input.currentStep === ChatStep.COMPLETED &&
+    input.intent === "FIELD_UPDATE" &&
+    input.appliedUpdates.some((update) => RECOMMENDATION_REFRESH_FIELDS.has(update.field as "productType" | "budget"))
+  );
 }
 
 export class ConversationService {
@@ -157,27 +180,38 @@ export class ConversationService {
 
     if (typeof transition.collectedData.city === "string" && transition.collectedData.city.trim()) {
       const justExtractedCity = applied.appliedUpdates.some((update) => update.field === "city");
-      if (justExtractedCity || hasLocationQuery) {
+      const shouldLookupShowroom =
+        normalizedIntent.intent === "PURCHASE_INTENT" || justExtractedCity || hasLocationQuery;
+
+      if (shouldLookupShowroom) {
         const showrooms = await this.showroomRepository.findAll();
         const match = showrooms.find((showroom) =>
           showroom.city.toLowerCase().includes(String(transition.collectedData.city).toLowerCase())
         );
         if (match) {
-          showroomMsg = `Good news - we have a showroom near you.\n${match.name} - ${match.address}\nContact: ${match.contact ?? "available on request"}`;
+          showroomMsg = `Great news - we have a showroom near you.\n${match.name} - ${match.address}\nContact: ${match.contact ?? "available on request"}`;
         }
       }
     }
 
     let recommendProducts: ProcessMessageOutput["recommendProducts"] = [];
     let exhausted = false;
-    if (
+    const hasShownProducts = transition.collectedData.hasShownProducts === true;
+    const shouldRecommendProducts =
       !transition.handoverTrigger &&
-      !["FAQ", "IRRELEVANT", "SMALL_TALK", "SECURITY_ATTACK", "EMPTY", "SPAM", "RESET"].includes(normalizedIntent.intent) &&
-      (normalizedIntent.intent === "SHOW_PRODUCTS" ||
+      !NON_RECOMMEND_INTENTS.has(normalizedIntent.intent) &&
+      (
+        normalizedIntent.intent === "SHOW_PRODUCTS" ||
         normalizedIntent.intent === "MORE_PRODUCTS" ||
-        normalizedIntent.intent === "FIELD_UPDATE" ||
-        transition.nextStep === ChatStep.COMPLETED)
-    ) {
+        shouldRefreshRecommendations({
+          currentStep: input.currentStep,
+          intent: normalizedIntent.intent,
+          appliedUpdates: applied.appliedUpdates,
+        }) ||
+        (transition.nextStep === ChatStep.COMPLETED && input.currentStep !== ChatStep.COMPLETED && !hasShownProducts)
+      );
+
+    if (shouldRecommendProducts) {
       const recommendation = await this.productService.buildRecommendation({
         collectedData: transition.collectedData,
         limit: normalizedIntent.intent === "SHOW_PRODUCTS" ? 3 : 4,
@@ -188,6 +222,7 @@ export class ConversationService {
       if (recommendProducts.length > 0) {
         transition.collectedData = {
           ...transition.collectedData,
+          hasShownProducts: true,
           shownProductIds: Array.from(
             new Set([...(transition.collectedData.shownProductIds ?? []), ...recommendProducts.map((product) => product.id)])
           ),
@@ -201,6 +236,7 @@ export class ConversationService {
       currentStep: input.currentStep,
       nextStep,
       intent: normalizedIntent,
+      collectedData: transition.collectedData,
       phrasingPayload: {
         CURRENT_STEP: nextStep,
         COLLECTED_DATA: transition.collectedData,

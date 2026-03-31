@@ -34,6 +34,16 @@ type LeadWriteValues = {
   estimatedOrderValue: number;
 };
 
+const PURCHASE_INTENT_KEYWORDS = [
+  "buy",
+  "purchase",
+  "visit",
+  "showroom",
+  "where to buy",
+  "how to proceed",
+  "order",
+] as const;
+
 export type PreparedLeadUpsert = {
   conversationId: string;
   collectedData: CollectedData;
@@ -105,6 +115,7 @@ export function detectHandoverTrigger(
   if (matched) return matched;
   if (collectedData.wantsCallback) return "Callback Request";
   if (collectedData.wantsSample) return "Sample Request";
+  if (PURCHASE_INTENT_KEYWORDS.some((keyword) => lowered.includes(keyword))) return null;
   if (score >= SCORE_THRESHOLDS.HOT) return "Score >= 70";
 
   return null;

@@ -23,14 +23,14 @@ export const QUICK_REPLIES: Record<string, string[]> = {
 };
 
 export const STEP_PROMPTS: Record<string, string> = {
-  NAME: "Hi, I'm Meera from Hey Concrete. May I know your name first?",
+  NAME: "What should I call you?",
   PRODUCT_TYPE: "What are you exploring today: wall panels, wall murals, breeze blocks, or brick cladding?",
-  CITY: "Which city are you based in? That helps me guide you better.",
-  BUDGET: "What budget range feels right for this project? A rough range is totally fine.",
-  AREA: "How much area would you like to cover? You can share the sqft or just say small, medium, or large.",
+  CITY: "Which city should I check for you?",
+  BUDGET: "What budget range are you considering? A rough range is fine.",
+  AREA: "About how much area do you want to cover?",
   ROOM_TYPE: "Which room or space is this for?",
-  STYLE: "What kind of look are you leaning toward: minimal, modern, geometric, textured, or something bold?",
-  TIMELINE: "When are you planning to move ahead: this month, 1-3 months, 3-6 months, or just exploring?",
+  STYLE: "What look are you leaning toward: minimal, modern, geometric, textured, or statement?",
+  TIMELINE: "When are you planning this: This Month, 1-3 Months, 3-6 Months, or Just Exploring?",
 };
 
 export const REQUIRED_FIELDS: Array<[string, ChatStep]> = [

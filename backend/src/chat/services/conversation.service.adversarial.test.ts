@@ -52,7 +52,7 @@ test("prompt injection is blocked and does not advance the step", async () => {
   });
 
   assert.equal(result.nextStep, ChatStep.PRODUCT_TYPE);
-  assert.match(result.reply, /product guidance|pricing ranges|connect/i);
+  assert.match(result.reply, /options|design guidance|showroom/i);
 });
 
 test("final quote requests are guarded instead of producing an authoritative quote", async () => {
@@ -177,7 +177,7 @@ test("random small talk is redirected without changing completed state", async (
   });
 
   assert.equal(result.nextStep, ChatStep.COMPLETED);
-  assert.match(result.reply, /Hey Concrete products|explore next/i);
+  assert.match(result.reply, /options|comparisons|showroom/i);
 });
 
 test("vague style phrasing is not treated as irrelevant when it contains a valid design hint", async () => {

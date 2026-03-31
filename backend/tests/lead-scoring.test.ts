@@ -105,3 +105,58 @@ test("engagement score increases when the user asks for suggestions, images, and
   assert.equal(boosted.engagement, 25);
   assert.ok(boosted.total > baseline.total);
 });
+
+test("timeline scoring keeps urgency weights for explicit answers", () => {
+  const oneToThreeMonths = ScoreHelper.calculate(
+    {
+      productType: "Wall Panels (H-UHPC)",
+      budget: "â‚¹400+/sqft",
+      areaSqft: "200",
+      timeline: "1-3 Months",
+    },
+    ["wall panels", "budget is 400 plus", "area is 200 sqft", "timeline is 1-3 months"],
+    []
+  );
+
+  const threeToSixMonths = ScoreHelper.calculate(
+    {
+      productType: "Wall Panels (H-UHPC)",
+      budget: "â‚¹400+/sqft",
+      areaSqft: "200",
+      timeline: "3-6 Months",
+    },
+    ["wall panels", "budget is 400 plus", "area is 200 sqft", "timeline is 3-6 months"],
+    []
+  );
+
+  assert.equal(oneToThreeMonths.timeline, 8);
+  assert.equal(threeToSixMonths.timeline, 5);
+  assert.ok(oneToThreeMonths.total > threeToSixMonths.total);
+});
+
+test("skipped or exploratory timelines stay low-scoring", () => {
+  const justExploring = ScoreHelper.calculate(
+    {
+      productType: "Brick Cladding",
+      budget: "â‚¹200-400/sqft",
+      areaSqft: "200",
+      timeline: "Just Exploring",
+    },
+    ["brick cladding", "budget is 200-400", "area is 200 sqft", "just exploring for now"],
+    []
+  );
+
+  const missingTimeline = ScoreHelper.calculate(
+    {
+      productType: "Brick Cladding",
+      budget: "â‚¹200-400/sqft",
+      areaSqft: "200",
+    },
+    ["brick cladding", "budget is 200-400", "area is 200 sqft"],
+    []
+  );
+
+  assert.equal(justExploring.timeline, 2);
+  assert.equal(missingTimeline.timeline, 0);
+  assert.ok(justExploring.total > missingTimeline.total);
+});

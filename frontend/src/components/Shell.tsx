@@ -199,9 +199,9 @@ export function Shell({ children }: { children: ReactNode }) {
       )}
 
       {/* ── Desktop layout ──────────────────────── */}
-      <div className="mx-auto flex min-h-screen max-w-[1600px] gap-6 px-4 py-4 md:px-6">
+      <div className="mx-auto flex min-h-screen max-w-[1600px] gap-6 px-4 py-4 md:items-start md:px-6">
         <aside
-          className="hidden w-[272px] shrink-0 rounded-[24px] p-5 md:flex md:flex-col"
+          className="hidden w-[272px] shrink-0 self-start rounded-[24px] p-5 md:sticky md:top-4 md:flex md:h-[calc(100vh-2rem)] md:flex-col md:overflow-y-auto"
           style={{ background: "#111111", border: "1px solid #1f1f1f" }}
         >
           {sidebarContent}

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ChatStep } from "@prisma/client";
-import { mockCatalogLookups, runTurns, setDeterministicChatDeps } from "./helpers.js";
+import { mockCatalogLookups, recentProducts, runTurns, setDeterministicChatDeps } from "./helpers.js";
 
 test("flow: repeating an already-collected product type does not create a loop", async () => {
   mockCatalogLookups();
@@ -62,4 +62,29 @@ test("flow: reset requests after completion do not silently rewind or wipe colle
   assert.equal(transcript.state.currentStep, ChatStep.COMPLETED);
   assert.equal(transcript.state.collectedData.city, "Mumbai");
   assert.match(transcript.last?.reply ?? "", /start a new chat|update any specific detail/i);
+});
+
+test("flow: style moves to timeline before recommendations are shown", async () => {
+  mockCatalogLookups({ products: recentProducts });
+  setDeterministicChatDeps();
+
+  const transcript = await runTurns({
+    currentStep: ChatStep.STYLE,
+    collectedData: {
+      name: "Priya",
+      productType: "Wall Panels (H-UHPC)",
+      city: "Udaipur",
+      budget: "Flexible",
+      areaSqft: "300",
+      roomType: "Living Room",
+    },
+    turns: ["modern", "this month"],
+  });
+
+  assert.equal(transcript.results[0]?.nextStep, ChatStep.TIMELINE);
+  assert.deepEqual(transcript.results[0]?.quickReplies, ["This Month", "1-3 Months", "3-6 Months", "Just Exploring"]);
+  assert.equal(transcript.results[0]?.recommendProducts.length, 0);
+  assert.equal(transcript.results[1]?.nextStep, ChatStep.COMPLETED);
+  assert.equal(transcript.results[1]?.collectedData.timeline, "This Month");
+  assert.ok((transcript.results[1]?.recommendProducts.length ?? 0) > 0);
 });

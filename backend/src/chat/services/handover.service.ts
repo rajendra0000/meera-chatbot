@@ -10,10 +10,8 @@ export class HandoverService {
       "human",
       "agent",
       "sales team",
-      "showroom visit",
-      "visit showroom",
-      "ready to buy",
-      "place an order",
+      "talk to a person",
+      "team se connect",
       "franchise",
       "talk to someone",
     ].some((keyword) => lowered.includes(keyword));

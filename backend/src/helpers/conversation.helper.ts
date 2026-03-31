@@ -25,19 +25,19 @@ export class ConversationHelper {
       case ChatStep.NAME:
         return STEP_PROMPTS.NAME;
       case ChatStep.PRODUCT_TYPE:
-        return "What are you exploring today: wall panels, wall murals, breeze blocks, or brick cladding?";
+        return STEP_PROMPTS.PRODUCT_TYPE;
       case ChatStep.CITY:
-        return "Which city are you based in? That helps me guide you better.";
+        return STEP_PROMPTS.CITY;
       case ChatStep.BUDGET:
-        return "What budget range feels right for this project? You can say Under Rs 200/sqft, Rs 200-400/sqft, Rs 400+/sqft, or Flexible.";
+        return STEP_PROMPTS.BUDGET;
       case ChatStep.AREA:
-        return "How much area would you like to cover? You can share the sqft, or just say small, medium, or large.";
+        return STEP_PROMPTS.AREA;
       case ChatStep.ROOM_TYPE:
-        return "Which room or space is this for?";
+        return STEP_PROMPTS.ROOM_TYPE;
       case ChatStep.STYLE:
-        return "What kind of look are you leaning toward: minimal, modern, geometric, textured, or something bold?";
+        return STEP_PROMPTS.STYLE;
       case ChatStep.TIMELINE:
-        return "When are you planning to move ahead: this month, 1-3 months, 3-6 months, or just exploring?";
+        return STEP_PROMPTS.TIMELINE;
       case ChatStep.COMPLETED:
         return "Here are a few options I'd shortlist for you.";
       default:

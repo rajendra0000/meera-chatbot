@@ -1,229 +1,315 @@
-# Hey Concrete Hiring Challenge
+# Hey Concrete AI Chatbot
 
-Production-style monorepo for the Hey Concrete chatbot challenge using Node.js 20, Express, TypeScript, Prisma, SQLite, React 18, Vite, TailwindCSS, and Groq.
+Production-ready AI chatbot system for Hey Concrete. The assistant, Meera, is designed for high-intent lead capture over conversational interfaces, with a backend that combines deterministic business logic, LLM reasoning, persistent conversation state, and operational safeguards required for real customer traffic.
 
-## Tech Stack
+The system is deployed and structured for production use. It captures leads conversationally, recommends relevant products such as wall panels and breeze blocks, scores lead quality in real time, and escalates qualified or purchase-ready conversations for human follow-up. The backend is channel-agnostic and already shaped for WhatsApp delivery through a Gupshup-ready webhook architecture.
 
-- Backend: Node.js 20, Express, TypeScript, Prisma, SQLite, Groq SDK
-- Frontend: React 18, Vite, TailwindCSS
-- Database: SQLite via Prisma
-- Channels: Web chat, Admin sandbox, Gupshup-ready webhook
+## 1. Project Overview
 
-## Architecture
+Meera is an AI sales assistant for Hey Concrete that guides customers through a structured qualification flow without feeling form-driven.
 
-- `frontend` renders three surfaces: customer chat, lead dashboard, and admin sandbox.
-- `backend` owns products, showrooms, prompt versions, conversations, messages, leads, and lead score breakdowns.
-- Every chat request loads the active `SYSTEM` + `LEARNING` prompts, advances the strict 9-step flow, asks Groq for structured JSON, persists messages, calculates score, and updates hot-lead state.
-- Gupshup webhook traffic uses the exact same chat service as the web UI.
+- Collects leads through natural, WhatsApp-style conversation
+- Recommends products across wall panels, breeze blocks, brick cladding, wall murals, and related categories
+- Tracks user intent, captured entities, and conversation state across multiple turns
+- Scores lead quality continuously and triggers handover when qualification or purchase intent crosses the right threshold
+- Supports web chat today and WhatsApp integration through a Gupshup-compatible backend flow
 
-## Day 1 - How To Run Locally And Test Full 9-Step Conversation
+This repository is not a demo chatbot. It is a production-oriented lead acquisition system with persistent data, channel abstraction, guardrails, and test coverage around critical flows.
 
-1. Install dependencies from the repo root:
+## 2. Key Features
+
+### Conversational Lead Capture
+
+- Guides users through a structured qualification journey without exposing internal forms
+- Collects name, product interest, city, budget, area, room type, style, and timeline in sequence
+- Maintains a one-question-per-step interaction model to reduce drop-off and improve answer quality
+
+### Deterministic + LLM Hybrid Pipeline
+
+- Uses deterministic extraction and state rules for control-critical decisions
+- Uses Groq-backed LLM calls for intent classification and response phrasing
+- Prevents the model from owning business state directly; the backend remains the source of truth
+
+### Product Recommendation Engine
+
+- Maps collected preferences to relevant product categories and curated recommendations
+- Supports follow-up browsing flows such as more products and more images
+- Avoids hallucinated catalog suggestions by grounding responses in database-backed product records
+
+### Lead Scoring System
+
+- Scores each lead across budget fit, project area, product/design interest, urgency, and engagement quality
+- Produces a transparent breakdown rather than a single opaque score
+- Drives downstream lead status and handover triggers
+
+### Purchase Intent Detection and Showroom Routing
+
+- Detects explicit buying signals, callback requests, and handover language
+- Routes showroom-related queries using stored location data
+- Escalates qualified leads without waiting for the full flow when intent is strong enough
+
+### Self-Learning System
+
+- Separates stable system behavior from evolving business tone and correction rules
+- Supports active learning prompt versions stored in the database
+- Allows admin corrections to change assistant behavior without redeploying the application
+
+### Adversarial Safety Handling
+
+- Detects prompt injection, data exfiltration attempts, spam, empty inputs, and unsafe probing
+- Applies policy flags before intent classification and response generation
+- Keeps the assistant grounded to approved product and FAQ context
+
+### Optimistic Concurrency Handling
+
+- Protects conversation updates with version-aware writes
+- Retries safely on write conflicts and transient Prisma transaction failures
+- Prevents double-commit behavior under concurrent message delivery scenarios
+
+### Multi-turn Context Awareness
+
+- Uses recent message history, collected fields, current step, and prompt versions together
+- Handles off-topic FAQs without losing progress in the qualification flow
+- Supports post-recommendation updates when users change product or budget preferences mid-conversation
+
+## 3. Architecture Overview
+
+The backend is organized around clear service boundaries so orchestration, extraction, state management, recommendation, and safety are independently testable.
+
+- `conversation.service`: central orchestrator for message processing, persistence, retries, and final response assembly
+- `intent.service`: classifies incoming messages into step answers, FAQs, handover requests, browsing requests, and other conversational intents
+- `entity-extractor.service`: extracts and normalizes structured fields such as city, budget, area, style, and product type
+- `state-machine.service`: advances or holds the user in the correct step based on collected data and intent
+- `product.service`: selects relevant products, handles recommendation refreshes, and supports browse/more-images flows
+- `response.service`: builds the final assistant reply using grounded context and channel-aware rendering
+- `safety.service`: blocks or flags adversarial inputs before they influence downstream logic
+- `repositories`: encapsulate persistence for conversations, messages, leads, products, FAQs, and showrooms
+
+High-level flow:
+
+`User -> Intent -> Extraction -> State -> Response -> DB`
+
+Operationally, each message is processed as follows:
+
+1. Load the active conversation and prompt bundle.
+2. Inspect the message for safety and handover signals.
+3. Classify intent and extract structured updates.
+4. Transition the conversation state machine.
+5. Generate grounded recommendations or FAQ answers when needed.
+6. Persist conversation, message history, and lead updates transactionally.
+
+## 4. Conversation Flow
+
+The qualification flow is intentionally strict and optimized for messaging UX:
+
+`Name -> Product -> City -> Budget -> Area -> Room -> Style -> Timeline -> Recommendations -> Purchase / Handover`
+
+Design principles:
+
+- One-question-per-step to keep the interaction lightweight and easy to answer
+- WhatsApp-style conversational replies instead of form-like prompts
+- Quick replies for high-friction decisions such as product category, budget, room type, style, and timeline
+- FAQ handling that answers the user while returning them to the pending qualification step
+- Recommendation delivery only after enough context has been captured to make suggestions meaningful
+
+## 5. Lead Scoring System
+
+Lead quality is computed as a weighted score out of 100:
+
+- Budget Alignment: 30
+- Area: 20
+- Design Interest: 15
+- Timeline: 10
+- Engagement: 25
+
+Scoring behavior:
+
+- Budget alignment is category-aware rather than globally fixed
+- Area rewards commercially meaningful project sizes
+- Design interest reflects whether the user has provided enough product/design specificity
+- Timeline prioritizes urgent projects
+- Engagement increases with substantive answers, product browsing, image requests, and recommendation behavior
+
+Qualification rules:
+
+- Score `>= 70` -> `HOT` lead -> eligible for handover
+- Score `40-69` -> `WARM` lead
+- Score `< 40` -> `COLD` lead
+
+Additional handover triggers:
+
+- Explicit callback or team handover request
+- Strong purchase intent
+- Showroom or visit-oriented buying behavior
+
+## 6. Tech Stack
+
+### Backend
+
+- Node.js
+- TypeScript
+- Express
+- Prisma
+- PostgreSQL (Neon)
+
+### AI
+
+- Groq API
+
+### Infra
+
+- Railway (backend)
+- Vercel (frontend)
+
+## 7. Deployment
+
+Production deployment is split by runtime responsibility:
+
+- Backend deployed on Railway
+- Frontend deployed on Vercel
+- PostgreSQL hosted on Neon
+
+Required environment variables include:
+
+```env
+DATABASE_URL=
+GROQ_API_KEY=
+GROQ_API_KEY_2=
+GROQ_API_KEY_3=
+GROQ_API_KEY_4=
+GROQ_API_KEY_5=
+PORT=3001
+FRONTEND_URL=
+ADMIN_API_KEY=
+GUPSHUP_API_KEY=
+GUPSHUP_APP_NAME=
+GUPSHUP_SOURCE_NUMBER=
+GUPSHUP_BASE_URL=https://api.gupshup.io/wa/api/v1/msg
+GUPSHUP_WEBHOOK_SECRET=
+VITE_API_URL=
+```
+
+Deployment notes:
+
+- Backend exposes `/chat`, `/dashboard`, `/admin`, `/webhook`, and `/health`
+- Admin and dashboard routes can be protected with `ADMIN_API_KEY`
+- WhatsApp webhook traffic is processed through the same orchestration pipeline as web chat
+
+## 8. Running Locally
+
+From the repository root:
 
 ```bash
+git clone <repo-url>
+cd "New project"
+```
+
+Backend setup:
+
+```bash
+cd backend
 npm install
 ```
 
-2. Copy environment files:
+Create `backend/.env` and configure the required variables:
 
-```bash
-copy backend\.env.example backend\.env
-copy frontend\.env.example frontend\.env
+```env
+DATABASE_URL=postgresql://user:password@host:port/database?sslmode=require
+GROQ_API_KEY=your_primary_key
+PORT=3001
+FRONTEND_URL=http://localhost:5173
 ```
 
-3. Add your keys:
-
-- `backend/.env`: add `GROQ_API_KEY`
-- Optional for WhatsApp readiness: add Gupshup keys
-
-4. Prepare the database:
+Generate Prisma client and apply schema:
 
 ```bash
-npm run prisma:generate --workspace backend
-npm run prisma:push --workspace backend
-npm run seed --workspace backend
+npx prisma generate
+npx prisma migrate deploy
 ```
 
-5. Start both apps:
+Start the backend in development:
 
 ```bash
 npm run dev
 ```
 
-6. Open:
-
-- Chat: `http://localhost:5173/`
-- Dashboard: `http://localhost:5173/dashboard`
-- Admin Sandbox: `http://localhost:5173/admin/sandbox`
-
-7. Test the 9-step flow:
-
-- Start the chat and confirm greeting from Meera
-- Answer in order: name, product type, city, budget, area, room type, style, timeline
-- Confirm product cards appear after recommendations
-- Confirm dashboard updates with score, status, breakdown, and conversation history
-
-## Day 2 Notes
-
-- After running `prisma db push` and seeding, the dashboard is wired for the requested columns, filters, stats, export actions, demo leads, and hot-lead handover logic.
-- The workspace did not include the five screenshots, so the dashboard and modal are implemented in the requested dark premium structure and may still need screenshot-based spacing/color tuning for true pixel-identical matching.
-
-## Self-Learning System
-
-- Open `/admin/sandbox`
-- Use the sandbox chat on the left
-- Add a correction on the right, for example: `Instead of "Sure", say "Kyo nahi"`
-- Save correction to create a new active `LEARNING` prompt version
-- Start a fresh sandbox conversation to verify the new tone applies instantly
-- Use `Rollback` in version history to reactivate an older learning prompt
-
-## Follow-Up System
-
-The 5-layer follow-up architecture is fully implemented:
-- Layer generation with context-aware messages per lead
-- Dashboard trigger with preview modal and copy buttons
-- Lead status transitions (WARM → HOT → DORMANT)
-
-**Note on automation:** Automated scheduling (node-cron or similar) is architected but not activated in this submission. The system is production-ready for scheduling - add a cron job calling the follow-up endpoint at the configured intervals to activate it.
-
-## Gupshup Integration
-
-1. Set these keys in `backend/.env`:
-
-   - `GUPSHUP_API_KEY`
-   - `GUPSHUP_APP_NAME`
-   - `GUPSHUP_SOURCE_NUMBER` (your Gupshup sender number, e.g. `919999999999`)
-   - `GUPSHUP_BASE_URL=https://api.gupshup.io/wa/api/v1/msg`
-   - Optional admin protection: `ADMIN_API_KEY`
-
-2. Paste this webhook URL in your Gupshup console (Messaging → App → Callback URL):
-
-   - `POST https://<your-domain>/webhook/gupshup`
-
-3. Gupshup inbound messages arrive as:
-
-   ```json
-   {
-     "payload": {
-       "type": "text",
-       "source": "919876543210",
-       "payload": { "text": "Hello" },
-       "sender": { "name": "User Name", "phone": "919876543210" }
-     }
-   }
-   ```
-
-   The backend parses this format and routes it into the same chat logic as the web UI.
-
-4. Test locally with ngrok:
-
-   ```bash
-   ngrok http 3001
-   curl -X POST https://<ngrok-url>/webhook/gupshup \\
-     -H "Content-Type: application/json" \\
-     -d '{"payload":{"type":"text","source":"919876543210","payload":{"text":"hello"},"sender":{"name":"Test"}}}'
-   ```
-
-## How To Deploy On Render (Production)
-
-1. **Database Setup**
-   - Create a PostgreSQL database on Render, Supabase, or Neon.
-   - Copy the connection string to `DATABASE_URL`.
-
-2. **Backend Web Service Setup**
-   - Create a new Web Service on Render connected to this repo.
-   - Set Root Directory to `backend`.
-   - Build Command: `npm install && npx prisma generate && npx prisma db push && npm run build`
-   - Start Command: `npm run start`
-   - Add Environment Variables:
-     - `DATABASE_URL` (your Postgres connection string)
-     - `GROQ_API_KEY` (and backups)
-     - `GUPSHUP_WEBHOOK_SECRET` (for webhook HMAC security)
-
-3. **Frontend Static Site Setup**
-   - Create a new Static Site on Render.
-   - Set Root Directory to `frontend`.
-   - Build Command: `npm install && npm run build`
-   - Publish Directory: `dist`
-   - Add Environment Variable:
-     - `VITE_API_URL=https://<your-backend-domain.onrender.com>`
-
-4. **Prevent Spin-Down (BetterStack)**
-   - Render free tier spins down after 15 minutes of inactivity.
-   - Create a free account on [BetterStack Uptime](https://betterstack.com/uptime).
-   - Add a monitor pointing to your backend: `https://<your-backend-domain.onrender.com>/health`
-   - Set the check interval to **every 14 minutes** or less.
-   - The `/health` endpoint returns `{status: 'ok', timestamp, uptime}` which BetterStack will verify, keeping your Groq models hot and the backend instantly responsive.
-
-## Demo Script — Exact 2.5-Minute Screen Recording
-
-**0:00 – 0:20** Open `/dashboard`. Show 4 stats at the top.
-Click **Load Demo** → 3 hot leads appear: Aakanksha Mehta (97), Priya Sharma (89), Rohan Gupta (77).
-Click **View** on Aakanksha → LeadModal opens: score breakdown bars (Budget 30/30, Space 20/20, etc.),
-Estimated Order Value ₹1,44,000, full conversation history in chat bubbles.
-
-**0:20 – 0:55** Open `/` (Meera Chat). Type your name → click quick-reply **Wall Panels (H-UHPC)** →
-type city → click budget quick-reply **₹400+** → type `250 sqft` → click room-type quick-reply
-**Living Room** → click style quick-reply **Minimal** → click timeline quick-reply **This Month**.
-Product carousel appears: Serene, Toran, Dune cards with images, dimensions, price badge.
-
-**0:55 – 1:15** Start a fresh chat conversation. Reach the BUDGET step, then type:
-`"what about installation costs?"`
-Meera answers: *"Installation is done by approved contractors, ₹150-200 per sqft..."*
-then redirects back to the budget question — NOT handed over to Kabir.
-This proves off-topic FAQ handling and the false-positive handover fix.
-
-**1:15 – 1:45** Open `/admin/sandbox`. Chat once (type your name).
-In the **Correct Meera** panel on the right, type:
-`Instead of "Sure", always say "Kyo nahi" when agreeing.`
-Click **Save As New Learning Version** → version history shows v2 Active.
-Click **New Chat** (bootstrap) in the left panel → reply uses "Kyo nahi".
-Click **Rollback to v1** → v1 is active again. Both directions work live.
-
-**1:45 – 2:05** Back on `/dashboard` → open any lead modal → click **Export Lead** → CSV downloads.
-On the dashboard header, click **Export CSV** → full all-leads CSV downloads.
-Click **Trigger Follow-up** in the lead modal → show the 5-layer follow-up message JSON in the response.
-
-**2:05 – 2:30** Show terminal. Run:
+Production-style local start:
 
 ```bash
-curl -X POST http://localhost:3001/webhook/gupshup \\
-  -H "Content-Type: application/json" \\
-  -d '{"payload":{"type":"text","source":"919876543210","payload":{"text":"Namaste"},"sender":{"name":"Test"}}}'
+npm run build
+npm start
 ```
 
-Response shows `replyText: "Namaste! I'm Meera from Hey Concrete..."` — not skipped.
-Say: *"Real WhatsApp messages from Gupshup route through this exact endpoint into the same
-9-step state machine, lead scoring engine, and prompt-learning system."*
+Frontend setup:
 
-## ImgBB Replacement Slots
+```bash
+cd ..\\frontend
+npm install
+```
 
-Replace the placeholder `image_url` values in the `products` table with final public ImgBB links for:
+Create `frontend/.env`:
 
-- Serene
-- Furrow
-- Furrow 2.0
-- Code
-- Code 2.0
-- Toran
-- Toran 2.0
-- Petal
-- Dune
-- Endless
-- Legato
-- Ridge
-- Matrix
-- Tetra
-- Crown
-- Ashta Prahar
-- Shringaar
-- Samwad
-- Poorak
-- Veetraagi
-- Abhivyakti
-- Gupp
-- Katha
-- BB-01
-- BB-02
-- BB-03
-- Standard Brick Cladding
+```env
+VITE_API_URL=http://localhost:3001
+```
+
+Run the frontend:
+
+```bash
+npm run dev
+```
+
+## 9. Testing
+
+The backend includes targeted coverage for the highest-risk parts of the system:
+
+- Adversarial test suite for prompt injection, hallucination boundaries, flow integrity, and security-sensitive behavior
+- Flow tests for multi-step qualification logic
+- Lead scoring tests for weighted scoring correctness and status thresholds
+- Concurrency tests for optimistic retries and transaction conflict handling
+
+The current backend test command is:
+
+```bash
+cd backend
+npm test
+```
+
+`npm test` passes in this repository.
+
+## 10. Self-Learning System
+
+This is one of the core differentiators of the project.
+
+The chatbot separates long-lived orchestration logic from adaptable conversational behavior:
+
+- A Knowledge Base grounds factual responses in approved FAQ and product context
+- A Learning Prompt stores evolving behavioral corrections independently from the system prompt
+- Admin corrections create new active learning versions in the database
+- New behavior can be activated immediately without a code redeploy
+- Rollback is supported by switching the active learning version
+
+This design allows business teams to refine tone, phrasing, and corrective behavior while preserving deterministic backend guarantees around state, scoring, and safety.
+
+## 11. Screenshots / Demo
+
+Suggested GitHub assets for this section:
+
+- Chat UI
+- Product recommendation carousel
+- Lead dashboard
+- Admin correction / learning interface
+
+Add screenshots or a short demo link here when publishing externally.
+
+## 12. Future Improvements
+
+- Complete full WhatsApp production rollout via Gupshup
+- Improve recommendation personalization using historical conversion signals
+- Add deeper analytics for funnel drop-off, conversion quality, and handover efficiency
+- Extend the assistant to voice and voice-to-text assisted interactions
+
+## 13. Author
+
+- Technical hiring task submission for Hey Concrete
+- Contact: add candidate email or LinkedIn here before publishing

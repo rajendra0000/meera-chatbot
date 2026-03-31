@@ -32,6 +32,7 @@ export interface CollectedData {
   wantsCallback?: boolean;
   wantsSample?: boolean;
   customerType?: string;
+  hasShownProducts?: boolean;
   shownProductIds?: string[];
   pendingImageProductIds?: string[];
   pendingImageCategory?: string;

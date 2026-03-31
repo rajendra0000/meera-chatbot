@@ -17,7 +17,7 @@ test("security: prompt injection is blocked without advancing the active step", 
   });
 
   assert.equal(result.nextStep, ChatStep.PRODUCT_TYPE);
-  assert.match(result.reply, /product guidance|pricing ranges|team/i);
+  assert.match(result.reply, /options|design guidance|showroom/i);
 });
 
 test("security: lead-data exfiltration attempts are refused and do not leak stored fields", async () => {
@@ -38,7 +38,7 @@ test("security: lead-data exfiltration attempts are refused and do not leak stor
 
   assert.equal(result.nextStep, ChatStep.BUDGET);
   assert.doesNotMatch(result.reply, /Aman|Delhi|phone numbers?/i);
-  assert.match(result.reply, /product guidance|pricing ranges|team/i);
+  assert.match(result.reply, /options|design guidance|showroom/i);
 });
 
 test("security: mid-conversation XML injection does not overwrite an already collected name", async () => {

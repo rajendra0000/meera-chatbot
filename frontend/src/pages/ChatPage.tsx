@@ -181,7 +181,7 @@ export function ChatPage() {
   }
 
   return (
-    <div className="grid min-h-[calc(100vh-5rem)] gap-5 lg:grid-cols-[300px,1fr]">
+    <div className="grid min-h-[calc(100vh-5rem)] gap-5 lg:h-[calc(100vh-3rem)] lg:min-h-[calc(100vh-3rem)] lg:grid-cols-[300px,minmax(0,1fr)]">
       {/* ── Left: Brand / Info Panel ─────────────────── */}
       <section
         className="flex flex-col rounded-[24px] p-6"
@@ -254,9 +254,10 @@ export function ChatPage() {
 
       {/* ── Right: Chat Interface ─────────────────────── */}
       <section
-        className="flex min-h-[80vh] flex-col rounded-[24px]"
+        className="flex min-h-[80vh] flex-col overflow-hidden rounded-[24px] lg:h-full lg:min-h-0"
         style={{ background: "#0f0f0f", border: "1px solid #1f1f1f" }}
       >
+        <div className="sticky top-0 z-10 shrink-0 bg-[#0f0f0f]">
         {/* Chat header */}
         <header
           className="flex items-center justify-between px-6 py-4"
@@ -326,9 +327,10 @@ export function ChatPage() {
             </div>
           </div>
         )}
+        </div>
 
         {/* Messages area */}
-        <div className="flex-1 overflow-y-auto px-5 py-5 md:px-6">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-32 pt-5 md:px-6">
           <div className="flex flex-col gap-4">
             {messages.map((entry) =>
               entry.type === "message" ? (
@@ -366,7 +368,7 @@ export function ChatPage() {
         {/* Input bar */}
         <form
           onSubmit={onSubmit}
-          className="p-4 md:p-5"
+          className="sticky bottom-0 z-10 shrink-0 bg-[#0f0f0f] p-4 md:p-5"
           style={{ borderTop: "1px solid #1f1f1f" }}
         >
           <div className="flex gap-3">

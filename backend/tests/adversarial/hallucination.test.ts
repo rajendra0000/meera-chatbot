@@ -68,5 +68,5 @@ test("hallucination: chained follow-ups on a fabricated product remain non-commi
   assert.doesNotMatch(transcript.results[0]?.reply ?? "", /Fusion panel is/i);
   assert.ok((transcript.results[0]?.recommendProducts ?? []).every((product) => recentProducts.some((candidate) => candidate.id === product.id)));
   assert.ok((transcript.results[1]?.recommendProducts ?? []).every((product) => recentProducts.some((candidate) => candidate.id === product.id)));
-  assert.match(transcript.results[1]?.reply ?? "", /rough range|product guidance|pricing ranges/i);
+  assert.match(transcript.results[1]?.reply ?? "", /rough range|options|comparisons|showroom/i);
 });
