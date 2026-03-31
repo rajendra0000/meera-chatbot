@@ -22,6 +22,10 @@ app.use(express.json({
   }
 }));
 
+app.get("/", (_req, res) => {
+  res.json({ status: "ok", message: "Hey Concrete API is running" });
+});
+
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString(), uptime: process.uptime() });
 });
