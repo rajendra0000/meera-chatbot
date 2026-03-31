@@ -38,6 +38,6 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
   });
 });
 
-app.listen(port, () => {
-  console.log(`Hey Concrete backend running on http://localhost:${port}`);
+app.listen(port, "0.0.0.0", () => {
+  console.log(`Hey Concrete backend running on port ${port}`);
 });
