@@ -88,7 +88,7 @@ export function AdminSandboxPage() {
   const [quickReplies, setQuickReplies] = useState<string[]>([]);
   const [isSandboxLoading, setIsSandboxLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
-  const [correction, setCorrection] = useState("Instead of \"Sure\", say \"Kyo nahi\".");
+  const [correction, setCorrection] = useState("Instead of saying \"Sure\", say \"Kyo nahi\".");
   const [versions, setVersions] = useState<PromptVersion[]>([]);
   const [isVersionsLoading, setIsVersionsLoading] = useState(true);
   const [hasLoadedVersions, setHasLoadedVersions] = useState(false);
@@ -883,6 +883,9 @@ export function AdminSandboxPage() {
             >
               Learning Prompt Control
             </h2>
+            <p className="mt-3 text-sm leading-relaxed" style={{ color: "#b8b0a4" }}>
+              New corrections append to the active learning prompt. They do not replace earlier rules.
+            </p>
           </div>
 
           <form
@@ -906,7 +909,7 @@ export function AdminSandboxPage() {
               }}
             />
             <button type="submit" className="rounded-full px-5 py-3 text-sm font-semibold btn-amber">
-              Save As New Learning Version
+              Append New Learning Rule
             </button>
           </form>
 

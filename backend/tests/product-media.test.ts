@@ -42,6 +42,8 @@ test("ChannelRendererService exposes separated thumbnail, gallery, and shade ass
     imageUrls: JSON.stringify([
       "https://heyconcrete.com/wp-content/uploads/2024/08/furrow-main.webp",
       "https://heyconcrete.com/wp-content/uploads/2024/08/furrow-detail.webp",
+      "https://heyconcrete.com/wp-content/uploads/2024/07/Plain.webp",
+      "https://heyconcrete.com/wp-content/uploads/2024/08/furrow-preview.webp",
     ]),
     galleryImages: [
       "https://heyconcrete.com/wp-content/uploads/2024/08/furrow-main.webp",
@@ -104,4 +106,25 @@ test("ChannelRendererService exposes separated thumbnail, gallery, and shade ass
       "https://heyconcrete.com/wp-content/uploads/2024/07/Porous.webp",
     ],
   });
+});
+
+test("resolveProductMedia filters brick-cladding previews and texture swatches out of galleries", () => {
+  const media = resolveProductMedia({
+    imageUrl: "https://heyconcrete.com/wp-content/uploads/2024/08/terra-brick-main.webp",
+    imageUrls: JSON.stringify([
+      "https://heyconcrete.com/wp-content/uploads/2024/08/terra-brick-main.webp",
+      "https://heyconcrete.com/wp-content/uploads/2024/08/terra-brick-angle.webp",
+      "https://heyconcrete.com/wp-content/uploads/2024/08/terra-brick-preview.webp",
+      "https://heyconcrete.com/wp-content/uploads/2024/08/terra-brick-texture.webp",
+      "https://heyconcrete.com/wp-content/uploads/2024/08/terra-brick-dimensions.webp",
+      "https://heyconcrete.com/wp-content/uploads/2024/08/terra-brick-sample.webp",
+    ]),
+  });
+
+  assert.equal(media.thumbnailUrl, "https://heyconcrete.com/wp-content/uploads/2024/08/terra-brick-main.webp");
+  assert.deepEqual(media.galleryImages, [
+    "https://heyconcrete.com/wp-content/uploads/2024/08/terra-brick-main.webp",
+    "https://heyconcrete.com/wp-content/uploads/2024/08/terra-brick-angle.webp",
+  ]);
+  assert.deepEqual(media.shadeImages, []);
 });

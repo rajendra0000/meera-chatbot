@@ -1,6 +1,6 @@
 import { ChatStep } from "@prisma/client";
 import { QUICK_REPLIES } from "../../constants/steps.constants.js";
-import { STYLE_INPUT_HINTS, TIMELINE_INPUT_HINTS, isVagueConversationValue } from "../../constants/conversation.constants.js";
+import { STYLE_INPUT_HINTS, TIMELINE_INPUT_HINTS, isVagueConversationValue, normalizeTimelineValue } from "../../constants/conversation.constants.js";
 import { CollectedData } from "../../types/conversation.types.js";
 import { canonicalizeBudget } from "../utils/budget.util.js";
 import { extractArea } from "../utils/area.util.js";
@@ -91,19 +91,11 @@ function detectStyle(message: string) {
 
 function detectTimeline(message: string) {
   const lowered = normalizeLower(message);
-  if (TIMELINE_INPUT_HINTS.some((item) => lowered.includes(item))) {
-    if (lowered.includes("this month") || lowered.includes("immediate") || lowered.includes("asap") || lowered.includes("urgent")) {
-      return "This Month";
-    }
-    if (lowered.includes("1-3") || lowered.includes("next month") || lowered.includes("few months")) {
-      return "1-3 Months";
-    }
-    if (lowered.includes("3-6") || lowered.includes("4-5")) {
-      return "3-6 Months";
-    }
-    return "Just Exploring";
+  if (!TIMELINE_INPUT_HINTS.some((item) => lowered.includes(item))) {
+    return null;
   }
-  return null;
+
+  return normalizeTimelineValue(message);
 }
 
 function hasBudgetSignal(message: string) {

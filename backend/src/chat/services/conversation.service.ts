@@ -14,7 +14,7 @@ import { HandoverService } from "./handover.service.js";
 import { IntentService } from "./intent.service.js";
 import { EntityExtractorService } from "./entity-extractor.service.js";
 import { StateMachineService } from "./state-machine.service.js";
-import { ProductService, mapProductTypeToCategory } from "./product.service.js";
+import { ProductService, resolveActiveCategoryLock } from "./product.service.js";
 import { ResponseService } from "./response.service.js";
 import { ChannelRendererService } from "./channel-renderer.service.js";
 import { withRetries } from "../utils/retry.util.js";
@@ -58,8 +58,17 @@ function dedupeReplyParagraphs(reply: string) {
 
 function isBudgetGuard(collectedData: CollectedData) {
   const budget = String(collectedData.budget ?? "");
-  const category = mapProductTypeToCategory(String(collectedData.productType ?? ""));
+  const category = resolveActiveCategoryLock(collectedData);
   return category === "Wall Panels (H-UHPC)" && Boolean(budget) && budget !== "Ã¢â€šÂ¹400+/sqft" && budget !== "â‚¹400+/sqft" && budget !== "Flexible";
+}
+
+function normalizeCityLookupValue(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/\bcity\b/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function isRetryableConversationWriteError(error: unknown) {
@@ -172,6 +181,11 @@ export class ConversationService {
       intent: normalizedIntent,
       handoverTrigger: explicitHandover ? "Explicit Team Request" : null,
     });
+    const activeCategoryLock = resolveActiveCategoryLock(transition.collectedData);
+    transition.collectedData = {
+      ...transition.collectedData,
+      ...(activeCategoryLock ? { activeCategoryLock } : {}),
+    };
 
     const faqResults = normalizedIntent.intent === "FAQ" ? await this.deps.searchFaqByKeywords(input.message) : [];
     const locationKeywords = ["showroom", "dealer", "visit", "store", "where", "location", "city", "near"];
@@ -185,8 +199,10 @@ export class ConversationService {
 
       if (shouldLookupShowroom) {
         const showrooms = await this.showroomRepository.findAll();
+        const normalizedCity = normalizeCityLookupValue(String(transition.collectedData.city));
         const match = showrooms.find((showroom) =>
-          showroom.city.toLowerCase().includes(String(transition.collectedData.city).toLowerCase())
+          normalizeCityLookupValue(showroom.city).includes(normalizedCity) ||
+          normalizedCity.includes(normalizeCityLookupValue(showroom.city))
         );
         if (match) {
           showroomMsg = `Great news - we have a showroom near you.\n${match.name} - ${match.address}\nContact: ${match.contact ?? "available on request"}`;
@@ -289,7 +305,7 @@ export class ConversationService {
     }
 
     if (!incomingMessage || input.bootstrap) {
-      const greeting = "Hi, I'm Meera from Hey Concrete. I'd love to help.\nMay I know your name first?";
+      const greeting = "Hey, I'm Meera from Hey Concrete 😊\nWhat should I call you?";
       await this.messageRepository.createMessage({
         conversationId: conversation.id,
         role: MessageRole.ASSISTANT,
@@ -371,6 +387,7 @@ export class ConversationService {
 
       const finalData = leadPlan?.collectedData ?? result.collectedData;
       const finalHandover = result.handover || Boolean(leadPlan?.trigger);
+      const finalTriggerType = result.triggerType ?? leadPlan?.trigger ?? null;
       const finalStep = finalHandover ? ChatStep.COMPLETED : result.nextStep;
 
       await prisma.$transaction(async (tx) => {
@@ -411,6 +428,7 @@ export class ConversationService {
             nextStep: finalStep,
             recommendedProductIds: result.recommendProducts.map((product) => product.id),
             handover: finalHandover,
+            triggerType: finalTriggerType,
             promptVersionId: result.promptVersionId,
             promptVersionLabel: result.promptVersionLabel,
           },
@@ -427,7 +445,7 @@ export class ConversationService {
         isMoreImages: result.isMoreImages,
         isBrowseOnly: result.isBrowseOnly,
         handover: finalHandover,
-        triggerType: result.triggerType,
+        triggerType: finalTriggerType,
         promptVersionId: result.promptVersionId,
         promptVersionLabel: result.promptVersionLabel,
       });

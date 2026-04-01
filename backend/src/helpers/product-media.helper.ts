@@ -30,6 +30,12 @@ const NON_GALLERY_KEYWORDS = [
   "diemsion",
   "preview",
   "swatch",
+  "texture",
+  "shade",
+  "finish",
+  "colour",
+  "color",
+  "sample",
 ];
 
 function normalizeAssetName(imageUrl: string) {

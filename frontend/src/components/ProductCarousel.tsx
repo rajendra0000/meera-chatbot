@@ -7,6 +7,11 @@ const PLACEHOLDER_IMAGE =
 const MAX_PRODUCTS = 3;
 
 function getProductImages(product: Product) {
+  const preferredGallery = product.galleryImages ?? product.gallery_images ?? null;
+  if (preferredGallery?.length) {
+    return Array.from(new Set(preferredGallery.filter((image) => Boolean(image && image.trim()))));
+  }
+
   let parsedImageUrls: string[] = [];
 
   if (Array.isArray(product.imageUrls)) {
@@ -21,7 +26,6 @@ function getProductImages(product: Product) {
     parsedImageUrls = product.image_urls ?? [];
   }
 
-  const galleryImages = product.galleryImages ?? product.gallery_images ?? parsedImageUrls;
   const thumbnailUrl =
     product.thumbnailUrl ??
     product.thumbnail_url ??
@@ -30,7 +34,7 @@ function getProductImages(product: Product) {
 
   return Array.from(
     new Set(
-      [...galleryImages, thumbnailUrl]
+      [...parsedImageUrls, thumbnailUrl]
         .filter((image): image is string => Boolean(image && image.trim()))
     )
   );

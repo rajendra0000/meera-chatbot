@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { LeadStatus } from "@prisma/client";
 import { ScoreHelper } from "../src/helpers/score.helper.js";
+import { prepareLeadUpsert } from "../src/services/lead.service.js";
 import { CollectedData } from "../src/types/conversation.types.js";
 
 test("strong structured lead scores HOT even without budgetMode, areaMode, or timelineScore helpers", () => {
@@ -159,4 +160,75 @@ test("skipped or exploratory timelines stay low-scoring", () => {
   assert.equal(justExploring.timeline, 2);
   assert.equal(missingTimeline.timeline, 0);
   assert.ok(justExploring.total > missingTimeline.total);
+});
+
+test("free-text timeline phrases normalize into urgency scores", () => {
+  const startSoon = ScoreHelper.calculate(
+    {
+      productType: "Wall Panels (H-UHPC)",
+      budget: "Rs 400+/sqft",
+      areaSqft: "200",
+      timeline: "thinking to start soon",
+    },
+    ["wall panels", "budget is 400 plus", "area is 200 sqft", "thinking to start soon"],
+    []
+  );
+
+  const fewMonths = ScoreHelper.calculate(
+    {
+      productType: "Wall Panels (H-UHPC)",
+      budget: "Rs 400+/sqft",
+      areaSqft: "200",
+      timeline: "in a few months",
+    },
+    ["wall panels", "budget is 400 plus", "area is 200 sqft", "in a few months"],
+    []
+  );
+
+  assert.equal(startSoon.timeline, 10);
+  assert.equal(fewMonths.timeline, 8);
+  assert.ok(startSoon.total > fewMonths.total);
+});
+
+test("purchase intent can lift a near-complete warm lead to HOT and trigger handover", () => {
+  const collectedData: CollectedData = {
+    name: "Rohan",
+    productType: "Wall Panels (H-UHPC)",
+    city: "Udaipur",
+    budget: "Rs 200-400/sqft",
+    areaSqft: "200",
+    timeline: "1-3 Months",
+  };
+
+  const baselineMessages = [
+    "My name is Rohan",
+    "I want wall panels",
+    "I'm in Udaipur",
+    "budget is 200-400 per sqft",
+    "area is 200 sqft",
+    "planning in 1-3 months",
+  ];
+  const purchaseMessages = [...baselineMessages, "I want to buy this"];
+
+  const baseline = ScoreHelper.calculate(collectedData, baselineMessages, []);
+  const purchaseReady = ScoreHelper.calculate(collectedData, purchaseMessages, []);
+
+  assert.equal(ScoreHelper.determineStatus(baseline.total), LeadStatus.WARM);
+  assert.equal(ScoreHelper.determineStatus(purchaseReady.total), LeadStatus.HOT);
+  assert.ok(purchaseReady.total > baseline.total);
+
+  const plan = prepareLeadUpsert({
+    conversationId: "conv-1",
+    customerName: "Rohan",
+    existingLead: null,
+    collectedData,
+    recommendedProducts: [],
+    latestUserInput: "I want to buy this",
+    userMessages: purchaseMessages,
+  });
+
+  assert.ok(plan);
+  assert.equal(plan?.trigger, "Purchase Intent");
+  assert.equal(plan?.leadValues.status, LeadStatus.HOT);
+  assert.equal(plan?.leadValues.triggerType, "Purchase Intent");
 });

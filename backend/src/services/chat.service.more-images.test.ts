@@ -74,6 +74,20 @@ const recentProducts = [
   },
 ];
 
+const singleImageBrickProduct = {
+  id: "terra-brick",
+  name: "Terra Brick",
+  category: "Brick Cladding",
+  priceRange: "Rs 200-400/sqft",
+  dimensions: "Strip based",
+  imageUrl: "terra-brick-main.webp",
+  imageUrls: JSON.stringify(["terra-brick-main.webp"]),
+  bestFor: "Warm exterior facades",
+  description: "Brick cladding for warm facade accents",
+  textures: "Rustic",
+  productUrl: "https://example.com/terra-brick",
+};
+
 function mockCatalogLookups(products: any[] = []) {
   stubMethod(prisma.product, "findMany", (async () => products) as typeof prisma.product.findMany);
   stubMethod(prisma.showroom, "findMany", (async () => []) as typeof prisma.showroom.findMany);
@@ -230,8 +244,34 @@ test("category confirmation continue keeps current category and clears pending s
     lastRecommendedProductIds: ["furrow", "serene", "ridge"],
   });
 
-  assert.match(result.reply, /continue with Wall Murals/i);
+  assert.match(result.reply, /stay with Wall Murals/i);
   assert.equal(result.collectedData.productType, "Wall Murals");
   assert.equal(result.collectedData.pendingImageMode, undefined);
   assert.equal(result.recommendProducts.length, 0);
+});
+
+test("single-image products do not pretend to have extra gallery photos", async () => {
+  mockCatalogLookups([singleImageBrickProduct]);
+  mockDeps();
+
+  const result = await processMessage({
+    message: "terra brick",
+    currentStep: ChatStep.COMPLETED,
+    collectedData: {
+      name: "Aman",
+      productType: "Brick Cladding",
+      activeCategoryLock: "Brick Cladding",
+      pendingImageMode: "awaiting_product",
+      pendingImageProductIds: ["terra-brick"],
+      shownProductIds: ["terra-brick"],
+    },
+    history: ["assistant: Sure! Which product would you like more images of?"],
+    lastRecommendedProductIds: ["terra-brick"],
+  });
+
+  assert.match(result.reply, /only have one verified photo of Terra Brick/i);
+  assert.equal(result.recommendProducts.length, 0);
+  assert.equal(result.isMoreImages, false);
+  assert.equal(result.collectedData.pendingImageMode, undefined);
+  assert.equal(result.collectedData.productType, "Brick Cladding");
 });

@@ -1,5 +1,6 @@
 import { LeadStatus } from "@prisma/client";
-import { SCORE_THRESHOLDS, TIMELINE_MAP } from "../constants/score.constants.js";
+import { SCORE_THRESHOLDS, TIMELINE_SCORE_BY_LABEL } from "../constants/score.constants.js";
+import { normalizeTimelineValue } from "../constants/conversation.constants.js";
 import { ConversationHelper } from "./conversation.helper.js";
 import { CollectedData } from "../types/conversation.types.js";
 import { ScoreBreakdown } from "../types/lead.types.js";
@@ -29,6 +30,18 @@ const VISUAL_INTENT_KEYWORDS = [
   "comparison",
   "difference",
   "more images",
+];
+
+const PURCHASE_INTENT_KEYWORDS = [
+  "buy",
+  "purchase",
+  "order",
+  "finalize",
+  "visit",
+  "showroom",
+  "book",
+  "where should i visit",
+  "where can i visit",
 ];
 
 const LOW_SIGNAL_MESSAGES = new Set([
@@ -155,13 +168,8 @@ export class ScoreHelper {
   private static normalizeTimelineLabel(collectedData: CollectedData) {
     const rawTimeline = String(collectedData.timeline ?? "").trim();
     if (rawTimeline) {
-      const normalizedTimeline = normalizeText(rawTimeline);
-      const mapped = Object.entries(TIMELINE_MAP).find(([keyword]) => normalizedTimeline.includes(keyword));
-      if (mapped) return mapped[1].label;
-      if (normalizedTimeline === "this month") return "This Month";
-      if (normalizedTimeline === "1-3 months") return "1-3 Months";
-      if (normalizedTimeline === "3-6 months") return "3-6 Months";
-      if (normalizedTimeline === "just exploring") return "Just Exploring";
+      const normalizedTimeline = normalizeTimelineValue(rawTimeline);
+      if (normalizedTimeline) return normalizedTimeline;
     }
 
     const timelineScore = Number(collectedData.timelineScore ?? 0);
@@ -174,11 +182,7 @@ export class ScoreHelper {
 
   private static scoreTimeline(collectedData: CollectedData) {
     const label = ScoreHelper.normalizeTimelineLabel(collectedData);
-    if (label === "This Month") return 10;
-    if (label === "1-3 Months") return 8;
-    if (label === "3-6 Months") return 5;
-    if (label === "Just Exploring") return 2;
-    return 0;
+    return label ? TIMELINE_SCORE_BY_LABEL[label] : 0;
   }
 
   private static isLowSignalMessage(message: string) {
@@ -220,6 +224,7 @@ export class ScoreHelper {
     if (ScoreHelper.hasIntentKeyword(userMessages, SUGGESTION_INTENT_KEYWORDS)) score += 4;
     if (ScoreHelper.hasIntentKeyword(userMessages, VISUAL_INTENT_KEYWORDS)) score += 4;
     if (ScoreHelper.normalizeTimelineLabel(collectedData) === "This Month") score += 3;
+    if (answeredCount >= 6 && ScoreHelper.hasIntentKeyword(userMessages, PURCHASE_INTENT_KEYWORDS)) score += 4;
 
     return Math.min(25, score);
   }

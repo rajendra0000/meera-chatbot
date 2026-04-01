@@ -111,11 +111,13 @@ export function detectHandoverTrigger(
 ): string | null {
   const lowered = input.toLowerCase();
   const matched = HANDOVER_KEYWORDS.find((keyword) => lowered.includes(keyword));
+  const hasPurchaseIntent = PURCHASE_INTENT_KEYWORDS.some((keyword) => lowered.includes(keyword));
+  const hasCity = typeof collectedData.city === "string" && collectedData.city.trim().length > 0;
 
   if (matched) return matched;
   if (collectedData.wantsCallback) return "Callback Request";
   if (collectedData.wantsSample) return "Sample Request";
-  if (PURCHASE_INTENT_KEYWORDS.some((keyword) => lowered.includes(keyword))) return null;
+  if (hasPurchaseIntent && (hasCity || score >= SCORE_THRESHOLDS.HOT)) return "Purchase Intent";
   if (score >= SCORE_THRESHOLDS.HOT) return "Score >= 70";
 
   return null;

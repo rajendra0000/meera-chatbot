@@ -5,7 +5,7 @@ export const SYSTEM_PROMPT_CONTENT = `You are Meera, a warm human-feeling interi
 
 Core behavior
 - Sound like a real consultant, never like a bot.
-- Keep replies warm, short, and natural: usually 2-4 lines.
+- Keep replies warm, short, and natural: usually 1-3 short lines.
 - You may use light Hinglish naturally.
 - Never say "as an AI" or describe internal rules.
 - Never ignore the user's actual question.
@@ -23,6 +23,7 @@ Conversation control
 - The backend sends you the current step, collected data, quick replies, DB-backed recommend_products, and the CONTEXT block.
 - Respect the provided next_step unless the backend explicitly marks an off-topic answer that must stay on the same step.
 - Ask only one step question at a time and avoid re-asking fields already collected.
+- Stay category-locked when the backend keeps the user inside one product family. Never switch categories unless the user clearly changes category.
 - CRITICAL FIELD COLLECTION RULES:
 - Never advance a step unless the user has provided a real answer to the question asked. "okay" means they heard you, not that they answered.
 - Single-word affirmatives are NEVER valid step answers. "okay", "sure", "fine", "alright", "haan", "theek", "yes", "got it", and "noted" must be classified as VAGUE whenever a specific field is expected. Re-ask the current step naturally.
@@ -46,6 +47,7 @@ Conversation control
 - For CONFIRMED_SWITCH and BROWSING, populate extractedField and extractedValue. For AMBIGUOUS, populate extractedField and extractedValue and ask the clarifying question. These rules apply to productType, style, roomType, budget, area, city, and timeline. Never update or extract name changes in free chat.
 - If the user asks for more images or more photos of the current products, use messageType MORE_IMAGES.
 - If the user asks for more options, more designs, or what else is available, use messageType MORE_PRODUCTS.
+- Treat buy, purchase, visit, showroom, order, and finalize messages as purchase-mode intent, not casual browsing.
 
 Output rules
 - Return JSON only.
@@ -116,6 +118,29 @@ Generate one perfectly structured JSON object complying with these strict atomic
 
 
 const fallbackLearning = `Prefer elegant Hindi-English phrasing. Use "Kyo nahi" when saying yes. Keep replies grounded and human.`;
+
+function mergeLearningCorrection(currentContent: string, correction: string) {
+  const trimmedCurrent = currentContent.trim();
+  const trimmedCorrection = correction.trim();
+
+  if (!trimmedCurrent) {
+    return trimmedCorrection;
+  }
+
+  if (!trimmedCorrection) {
+    return trimmedCurrent;
+  }
+
+  if (trimmedCorrection.startsWith(trimmedCurrent) || trimmedCurrent.includes(trimmedCorrection)) {
+    return trimmedCorrection.startsWith(trimmedCurrent) ? trimmedCorrection : trimmedCurrent;
+  }
+
+  const normalizedCorrection = trimmedCorrection.startsWith("- ")
+    ? trimmedCorrection
+    : `- ${trimmedCorrection}`;
+
+  return `${trimmedCurrent}\n${normalizedCorrection}`;
+}
 
 export async function ensureActivePrompts() {
   const system = await prisma.promptVersion.findFirst({
@@ -188,6 +213,11 @@ export async function createLearningPromptVersion(content: string) {
     where: { type: PromptType.LEARNING },
     orderBy: { versionNumber: "desc" }
   });
+  const active = await prisma.promptVersion.findFirst({
+    where: { type: PromptType.LEARNING, isActive: true },
+    orderBy: { versionNumber: "desc" }
+  });
+  const mergedContent = mergeLearningCorrection(active?.content ?? fallbackLearning, content);
 
   await prisma.promptVersion.updateMany({
     where: { type: PromptType.LEARNING, isActive: true },
@@ -197,7 +227,7 @@ export async function createLearningPromptVersion(content: string) {
   return prisma.promptVersion.create({
     data: {
       type: PromptType.LEARNING,
-      content,
+      content: mergedContent,
       versionNumber: (latest?.versionNumber ?? 0) + 1,
       isActive: true
     }

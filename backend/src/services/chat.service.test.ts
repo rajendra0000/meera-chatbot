@@ -83,6 +83,34 @@ const recentProducts = [
   },
 ];
 
+const brickProduct = {
+  id: "terra-brick",
+  name: "Terra Brick",
+  category: "Brick Cladding",
+  priceRange: "Rs 200-400/sqft",
+  dimensions: "Strip based",
+  imageUrl: "terra-brick-main.webp",
+  imageUrls: JSON.stringify(["terra-brick-main.webp", "terra-brick-angle.webp"]),
+  bestFor: "Warm exterior facades",
+  description: "Brick cladding for warm facade accents",
+  textures: "Rustic",
+  productUrl: "https://example.com/terra-brick",
+};
+
+function buildCompleteLead(overrides: Record<string, unknown> = {}) {
+  return {
+    name: "Aman",
+    productType: "Wall Panels (H-UHPC)",
+    city: "Delhi",
+    budget: "Flexible",
+    areaSqft: "250",
+    roomType: "Living Room",
+    style: "Modern",
+    timeline: "1-3 Months",
+    ...overrides,
+  };
+}
+
 test("Call 1 success runs backend logic and invokes Call 2 with post-backend context", async () => {
   mockCatalogLookups();
 
@@ -526,7 +554,38 @@ test("style answers advance to timeline and attach only timeline quick replies",
   assert.match(result.reply, /When are you planning this/i);
 });
 
-test("purchase intent uses the collected city and skips product recommendations", async () => {
+[
+  { message: "thinking to start this month", expectedTimeline: "This Month" },
+  { message: "start soon", expectedTimeline: "This Month" },
+  { message: "in a few months", expectedTimeline: "1-3 Months" },
+].forEach(({ message, expectedTimeline }) => {
+  test(`timeline free text "${message}" normalizes to ${expectedTimeline}`, async () => {
+    mockCatalogLookups();
+
+    __setChatServiceDepsForTests({
+      getActivePromptBundle: async () => promptBundle,
+      searchFaqByKeywords: async () => [],
+      groqJsonCompletion: async () => {
+        throw new Error("llm disabled");
+      },
+      groqTextCompletion: async () => "",
+    });
+
+    const result = await processMessage({
+      message,
+      currentStep: ChatStep.TIMELINE,
+      collectedData: buildCompleteLead({ timeline: undefined, city: "Udaipur" }),
+      history: ["assistant: When are you planning to start this?"],
+      lastRecommendedProductIds: [],
+    });
+
+    assert.equal(result.nextStep, ChatStep.COMPLETED);
+    assert.equal(result.collectedData.timeline, expectedTimeline);
+    assert.deepEqual(result.quickReplies, []);
+  });
+});
+
+test("purchase intent like 'I want to buy this' uses the collected city and skips product recommendations", async () => {
   let productLookupCount = 0;
   stubMethod(prisma.product, "findMany", (async () => {
     productLookupCount += 1;
@@ -546,7 +605,7 @@ test("purchase intent uses the collected city and skips product recommendations"
   });
 
   const result = await processMessage({
-    message: "How can I purchase?",
+    message: "I want to buy this",
     currentStep: ChatStep.COMPLETED,
     collectedData: {
       name: "Aman",
@@ -570,6 +629,48 @@ test("purchase intent uses the collected city and skips product recommendations"
   assert.equal(productLookupCount, 0);
   assert.match(result.reply, /showroom in Udaipur/i);
   assert.match(result.reply, /details|connect/i);
+});
+
+test("visit intent uses normalized city matching and skips recommendation loops", async () => {
+  let productLookupCount = 0;
+  stubMethod(prisma.product, "findMany", (async () => {
+    productLookupCount += 1;
+    return recentProducts;
+  }) as typeof prisma.product.findMany);
+  stubMethod(prisma.showroom, "findMany", (async () => [
+    { id: "showroom-1", city: "Delhi", name: "Delhi Studio", address: "MG Road", contact: "9999999999" }
+  ]) as typeof prisma.showroom.findMany);
+
+  __setChatServiceDepsForTests({
+    getActivePromptBundle: async () => promptBundle,
+    searchFaqByKeywords: async () => [],
+    groqJsonCompletion: async () => {
+      throw new Error("llm disabled");
+    },
+    groqTextCompletion: async () => "",
+  });
+
+  const result = await processMessage({
+    message: "where should I visit?",
+    currentStep: ChatStep.COMPLETED,
+    collectedData: {
+      ...buildCompleteLead({
+        city: "New Delhi",
+        budget: "Rs 400+/sqft",
+        hasShownProducts: true,
+        shownProductIds: ["furrow"],
+      }),
+    },
+    history: ["assistant: Nice, I've picked a few options for you."],
+    lastRecommendedProductIds: ["furrow"],
+  });
+
+  assert.equal(result.nextStep, ChatStep.COMPLETED);
+  assert.equal(result.recommendProducts.length, 0);
+  assert.equal(productLookupCount, 0);
+  assert.match(result.reply, /showroom in New Delhi/i);
+  assert.match(result.reply, /Delhi Studio - MG Road/i);
+  assert.match(result.reply, /contact|connect/i);
 });
 
 test("completed follow-ups do not loop back into product recommendations once products were shown", async () => {
@@ -605,6 +706,42 @@ test("completed follow-ups do not loop back into product recommendations once pr
 
   assert.equal(result.recommendProducts.length, 0);
   assert.match(result.reply, /compare|images|showroom/i);
+});
+
+test("more options stays category-locked when the current category is exhausted", async () => {
+  mockCatalogLookups([brickProduct, ...recentProducts]);
+
+  __setChatServiceDepsForTests({
+    getActivePromptBundle: async () => promptBundle,
+    searchFaqByKeywords: async () => [],
+    groqJsonCompletion: async () => {
+      throw new Error("llm disabled");
+    },
+    groqTextCompletion: async () => "",
+  });
+
+  const result = await processMessage({
+    message: "more options",
+    currentStep: ChatStep.COMPLETED,
+    collectedData: {
+      ...buildCompleteLead({
+        productType: "Brick Cladding",
+        activeCategoryLock: "Brick Cladding",
+        city: "Udaipur",
+        budget: "Rs 200-400/sqft",
+        hasShownProducts: true,
+        shownProductIds: ["terra-brick"],
+      }),
+    },
+    history: ["assistant: Nice, I've picked a few options for you."],
+    lastRecommendedProductIds: ["terra-brick"],
+  });
+
+  assert.equal(result.recommendProducts.length, 0);
+  assert.equal(result.collectedData.activeCategoryLock, "Brick Cladding");
+  assert.match(result.reply, /brick cladding/i);
+  assert.match(result.reply, /compare|another category|explore/i);
+  assert.doesNotMatch(result.reply, /wall panels|furrow|serene|ridge/i);
 });
 
 test("robotic recap phrasing falls back to the approved short reply", async () => {

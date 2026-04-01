@@ -1,5 +1,5 @@
 export const TEAM_HANDOVER_MESSAGE =
-  "I've noted everything down! Let me connect you with Kabir from our team so he can help you finalize the right choice. Expect a call soon.";
+  "Nice, I have what I need.\nI'll connect you with Kabir from our team for the next step.";
 
 export class HandoverService {
   detectExplicitHandover(message: string) {
@@ -7,6 +7,7 @@ export class HandoverService {
     return [
       "call me",
       "connect me",
+      "callback",
       "human",
       "agent",
       "sales team",

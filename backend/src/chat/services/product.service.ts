@@ -43,7 +43,20 @@ export function mapProductTypeToCategory(productType?: string) {
   if (normalized.includes("breeze")) return "Breeze Blocks";
   if (normalized.includes("mural")) return "Wall Murals";
   if (normalized.includes("brick")) return "Brick Cladding";
-  return "Wall Panels (H-UHPC)";
+  if (normalized.includes("panel")) return "Wall Panels (H-UHPC)";
+  return null;
+}
+
+export function resolveActiveCategoryLock(collectedData: CollectedData) {
+  const storedLock = typeof collectedData.activeCategoryLock === "string"
+    ? collectedData.activeCategoryLock.trim()
+    : "";
+
+  if (storedLock) {
+    return storedLock;
+  }
+
+  return mapProductTypeToCategory(String(collectedData.productType ?? ""));
 }
 
 function normalizeProductMatchText(value: string) {
@@ -67,7 +80,7 @@ function findMatchingRecentProduct(message: string, candidateProducts: Product[]
   return partialMatches.length === 1 ? partialMatches[0] : null;
 }
 
-function displayCategoryName(category?: string) {
+function displayCategoryName(category?: string | null) {
   if (!category) return "this category";
   return category.replace(/\s*\(.*?\)\s*/g, "").trim();
 }
@@ -86,6 +99,10 @@ function detectContinueCurrentCategoryResponse(message: string) {
   );
 }
 
+function hasExtraGalleryImages(product: Product) {
+  return (product.galleryImages ?? []).length > 1;
+}
+
 export class ProductService {
   constructor(private readonly productRepository = new ProductRepository()) {}
 
@@ -93,9 +110,10 @@ export class ProductService {
     const allProducts = await this.productRepository.findAll();
     let filtered = allProducts.filter((product) => !excludeIds.includes(product.id));
 
-    const targetCategory = mapProductTypeToCategory(String(collectedData.productType ?? ""));
-    const byCategory = filtered.filter((product) => product.category.toLowerCase().includes(targetCategory.toLowerCase()));
-    if (byCategory.length > 0) filtered = byCategory;
+    const targetCategory = resolveActiveCategoryLock(collectedData);
+    if (targetCategory) {
+      filtered = filtered.filter((product) => product.category.toLowerCase().includes(targetCategory.toLowerCase()));
+    }
 
     const budget = String(collectedData.budget ?? "");
     if (targetCategory === "Wall Panels (H-UHPC)" && budget && budget !== "₹400+/sqft" && budget !== "Flexible" && budget !== "â‚¹400+/sqft") {
@@ -164,6 +182,7 @@ export class ProductService {
       const pendingProductId = String(params.collectedData.pendingImageRequestedProductId ?? "");
       const pendingProducts = await this.getProductsByIds(pendingProductId ? [pendingProductId] : []);
       const pendingProduct = pendingProducts[0] ?? null;
+      const currentCategory = resolveActiveCategoryLock(params.collectedData);
       const clearedData = {
         ...params.collectedData,
         pendingImageMode: undefined,
@@ -175,6 +194,18 @@ export class ProductService {
 
       if (pendingProduct) {
         if (detectPositiveImageSwitchResponse(params.message)) {
+          if (!hasExtraGalleryImages(pendingProduct)) {
+            return {
+              handled: true,
+              reply: `I only have one verified photo of ${pendingProduct.name} right now. Want to compare it or see another option?`,
+              nextStep: params.currentStep,
+              collectedData: clearedData,
+              recommendProducts: [],
+              isMoreImages: false,
+              quickReplies,
+            };
+          }
+
           return {
             handled: true,
             reply: `Sure, here are more images of ${pendingProduct.name}.`,
@@ -192,7 +223,7 @@ export class ProductService {
         if (detectContinueCurrentCategoryResponse(params.message)) {
           return {
             handled: true,
-            reply: `No problem - we'll continue with ${displayCategoryName(mapProductTypeToCategory(String(params.collectedData.productType ?? "")))}.`,
+            reply: `No problem - we'll stay with ${displayCategoryName(currentCategory)}.`,
             nextStep: params.currentStep,
             collectedData: clearedData,
             recommendProducts: [],
@@ -203,7 +234,7 @@ export class ProductService {
 
         return {
           handled: true,
-          reply: `${pendingProduct.name} is from ${displayCategoryName(pendingProduct.category)}. You're currently looking at ${displayCategoryName(mapProductTypeToCategory(String(params.collectedData.productType ?? "")))}. Would you like to switch and see images of ${pendingProduct.name}, or continue with ${displayCategoryName(mapProductTypeToCategory(String(params.collectedData.productType ?? "")))}?`,
+          reply: `${pendingProduct.name} is from ${displayCategoryName(pendingProduct.category)}. You're currently looking at ${displayCategoryName(currentCategory)}. Would you like to switch and see images of ${pendingProduct.name}, or continue with ${displayCategoryName(currentCategory)}?`,
           nextStep: params.currentStep,
           collectedData: params.collectedData,
           recommendProducts: [],
@@ -241,8 +272,8 @@ export class ProductService {
         };
       }
 
-      const currentCategory = mapProductTypeToCategory(String(params.collectedData.productType ?? ""));
-      if (params.collectedData.productType && matched.category !== currentCategory) {
+      const currentCategory = resolveActiveCategoryLock(params.collectedData);
+      if (currentCategory && matched.category !== currentCategory) {
         return {
           handled: true,
           reply: `${matched.name} is from ${displayCategoryName(matched.category)}. You're currently looking at ${displayCategoryName(currentCategory)}. Would you like to switch and see images of ${matched.name}, or continue with ${displayCategoryName(currentCategory)}?`,
@@ -253,6 +284,22 @@ export class ProductService {
             pendingImageRequestedProductId: matched.id,
             pendingImageProductName: matched.name,
             pendingImageCategory: matched.category,
+          },
+          recommendProducts: [],
+          isMoreImages: false,
+          quickReplies,
+        };
+      }
+
+      if (!hasExtraGalleryImages(matched)) {
+        return {
+          handled: true,
+          reply: `I only have one verified photo of ${matched.name} right now. Want to compare it or see another option?`,
+          nextStep: params.currentStep,
+          collectedData: {
+            ...params.collectedData,
+            pendingImageMode: undefined,
+            pendingImageProductIds: undefined,
           },
           recommendProducts: [],
           isMoreImages: false,

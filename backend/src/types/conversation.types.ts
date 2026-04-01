@@ -15,6 +15,7 @@ export interface CollectedData {
   name?: string;
   productType?: string;
   city?: string;
+  activeCategoryLock?: string;
 
   budget?: BudgetRange | string;
   budgetMode?: "known" | "flexible" | "vague";
