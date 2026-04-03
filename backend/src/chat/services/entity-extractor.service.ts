@@ -62,10 +62,159 @@ const NAME_BLOCKLIST = [
   "nhi",
   "ni",
 ] as const;
+const SHOWROOM_CITIES = [
+  "Udaipur",
+  "Delhi",
+  "Bengaluru",
+  "Hyderabad",
+  "Guwahati",
+  "Indore",
+  "Surat",
+  "Bhubaneswar",
+  "Kochi",
+  "Coimbatore",
+  "Pune",
+  "Siliguri",
+  "Meerut",
+  "Dehradun",
+  "Bhilwara",
+  "Nagpur",
+  "Kota",
+  "Ghaziabad",
+  "Mumbai",
+  "Karnal",
+  "Hubballi",
+  "Mohali",
+  "Gurgaon",
+  "Ahmedabad",
+  "Raipur",
+  "Chennai",
+  "Jaipur",
+  "Kolkata",
+  "Kathmandu",
+] as const;
+const CITY_ALIASES: Record<string, string> = {
+  "new delhi": "Delhi",
+  bangalore: "Bengaluru",
+  bengaluru: "Bengaluru",
+  bombay: "Mumbai",
+  gurugram: "Gurgaon",
+  cochin: "Kochi",
+};
+const CITY_REJECTION_TOKENS = [
+  "month",
+  "months",
+  "week",
+  "weeks",
+  "day",
+  "days",
+  "future",
+  "later",
+  "soon",
+  "tomorrow",
+  "today",
+  "tonight",
+  "yesterday",
+  "hour",
+  "hours",
+  "other",
+  "unknown",
+  "few months",
+  "few weeks",
+] as const;
+const CITY_PATTERN_MATCHERS = [
+  /^(?:i am|i'm|im)\s+from\s+(.+)$/i,
+  /^(?:i am|i'm|im)\s+in\s+(.+)$/i,
+  /^(?:i am|i'm|im)\s+based\s+in\s+(.+)$/i,
+  /^(?:i am|i'm|im)\s+located\s+in\s+(.+)$/i,
+  /^based\s+in\s+(.+)$/i,
+  /^located\s+in\s+(.+)$/i,
+  /^project\s+is\s+in\s+(.+)$/i,
+  /^site\s+is\s+in\s+(.+)$/i,
+  /^city\s+is\s+(.+)$/i,
+] as const;
+
+const KNOWN_CITY_LOOKUP = new Map<string, string>(
+  Array.from(new Set([...(QUICK_REPLIES.CITY ?? []).filter((city) => city !== "Other"), ...SHOWROOM_CITIES]))
+    .map((city) => [normalizeCityKey(city), city])
+);
 
 function extractNameCandidate(message: string) {
   const trimmed = normalizeWhitespace(message);
   return trimmed.replace(NAME_PREFIX_PATTERN, "").trim();
+}
+
+function normalizeCityKey(value: string) {
+  return normalizeLower(value)
+    .replace(/\bcity\b/g, " ")
+    .replace(/[^a-z\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function isRejectedCityValue(value: string) {
+  if (/\d/.test(value)) {
+    return true;
+  }
+
+  const normalized = normalizeCityKey(value);
+  if (!normalized) {
+    return true;
+  }
+
+  if (normalized.split(" ").filter(Boolean).length > 3) {
+    return true;
+  }
+
+  return CITY_REJECTION_TOKENS.some((token) => normalized.includes(token));
+}
+
+function resolveKnownCity(value: string) {
+  const normalized = normalizeCityKey(value);
+  if (!normalized || isRejectedCityValue(value)) {
+    return null;
+  }
+
+  return CITY_ALIASES[normalized] ?? KNOWN_CITY_LOOKUP.get(normalized) ?? null;
+}
+
+function extractStrictCityCandidate(message: string) {
+  const trimmed = normalizeWhitespace(message);
+
+  for (const pattern of CITY_PATTERN_MATCHERS) {
+    const match = trimmed.match(pattern);
+    const candidate = match?.[1]?.trim();
+    if (candidate) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+function extractHighConfidenceCityFromContext(message: string) {
+  const normalizedMessage = normalizeCityKey(message);
+  if (!normalizedMessage) {
+    return null;
+  }
+
+  const candidates = [
+    ...Object.entries(CITY_ALIASES),
+    ...Array.from(KNOWN_CITY_LOOKUP.entries()),
+  ].sort((a, b) => b[0].length - a[0].length);
+
+  for (const [candidate, resolvedCity] of candidates) {
+    const pattern = new RegExp(`(?:^|\\b)(?:in|from|at|near)\\s+${escapeRegex(candidate)}(?:\\b|$)`, "i");
+    if (pattern.test(normalizedMessage)) {
+      return resolvedCity;
+    }
+  }
+
+  return null;
 }
 
 function looksUnsafeNameCandidate(candidate: string) {
@@ -108,16 +257,18 @@ function isAreaQuickReply(message: string) {
   return ["small", "medium", "meduim", "medim", "large"].includes(normalized);
 }
 
-function detectCity(message: string) {
-  const lowered = normalizeLower(message);
-  const knownCities = QUICK_REPLIES.CITY ?? [];
-  const city = knownCities.find((candidate) => lowered.includes(candidate.toLowerCase()));
-  if (city && city !== "Other") return city;
-  const match = lowered.match(/\bin\s+([a-z\s]+)/);
-  if (match?.[1]) {
-    return normalizeWhitespace(match[1]).replace(/\b\w/g, (char) => char.toUpperCase());
+function detectCity(message: string, currentStep: ChatStep) {
+  const directCity = resolveKnownCity(message);
+  if (currentStep === ChatStep.CITY && directCity) {
+    return directCity;
   }
-  return null;
+
+  const strictCandidate = extractStrictCityCandidate(message);
+  if (!strictCandidate) {
+    return currentStep === ChatStep.CITY ? null : extractHighConfidenceCityFromContext(message);
+  }
+
+  return resolveKnownCity(strictCandidate);
 }
 
 function detectRoomType(message: string) {
@@ -206,7 +357,7 @@ export class EntityExtractorService {
       });
     }
 
-    const city = detectCity(message);
+    const city = detectCity(message, currentStep);
     if (city) {
       updates.push({
         field: "city",
@@ -309,33 +460,36 @@ export class EntityExtractorService {
     const rejected: FieldUpdate[] = [];
 
     for (const update of updates) {
-      const normalizedValue = normalizeLower(update.value);
+      const resolvedCity = update.field === "city" ? resolveKnownCity(update.value) : null;
+      const nextValue = resolvedCity ?? update.value;
+      const normalizedValue = normalizeLower(nextValue);
       const looksInvalidStyle =
         update.field === "style" &&
-        (isVagueConversationValue(update.value) || !STYLE_INPUT_HINTS.some((item) => normalizedValue.includes(item)));
+        (isVagueConversationValue(nextValue) || !STYLE_INPUT_HINTS.some((item) => normalizedValue.includes(item)));
       const looksInvalidTimeline =
         update.field === "timeline" &&
-        (isVagueConversationValue(update.value) || !TIMELINE_INPUT_HINTS.some((item) => normalizedValue.includes(item)));
+        (isVagueConversationValue(nextValue) || !TIMELINE_INPUT_HINTS.some((item) => normalizedValue.includes(item)));
       const looksInvalidRoomType =
         update.field === "roomType" &&
-        (isVagueConversationValue(update.value) || !ROOM_KEYWORDS.some((item) => normalizedValue.includes(item)));
-      const looksInvalidArea = update.field === "areaSqft" && (!update.value.trim() || update.value === "0" || update.value === "Not captured");
-      const looksInvalidName = update.field === "name" && isVagueConversationValue(update.value);
+        (isVagueConversationValue(nextValue) || !ROOM_KEYWORDS.some((item) => normalizedValue.includes(item)));
+      const looksInvalidArea = update.field === "areaSqft" && (!nextValue.trim() || nextValue === "0" || nextValue === "Not captured");
+      const looksInvalidCity = update.field === "city" && !resolvedCity;
+      const looksInvalidName = update.field === "name" && isVagueConversationValue(nextValue);
 
-      if (looksInvalidStyle || looksInvalidTimeline || looksInvalidRoomType || looksInvalidArea || looksInvalidName) {
+      if (looksInvalidStyle || looksInvalidTimeline || looksInvalidRoomType || looksInvalidArea || looksInvalidCity || looksInvalidName) {
         rejected.push(update);
         continue;
       }
 
       const currentValue = nextData[update.field];
       const currentNormalized = typeof currentValue === "string" ? normalizeConversationValue(currentValue) : "";
-      const nextNormalized = normalizeConversationValue(update.value);
+      const nextNormalized = normalizeConversationValue(nextValue);
       const allowOverwrite =
         update.field !== "name" &&
         (currentStep === ChatStep.COMPLETED || update.overwriteMode === "overwrite");
 
       if (typeof currentValue === "string" && currentValue.trim() && currentNormalized === nextNormalized) {
-        applied.push(update);
+        applied.push({ ...update, value: nextValue });
         continue;
       }
 
@@ -351,8 +505,8 @@ export class EntityExtractorService {
         }
       }
 
-      nextData[update.field] = update.value;
-      applied.push(update);
+      nextData[update.field] = nextValue;
+      applied.push({ ...update, value: nextValue });
     }
 
     return { collectedData: nextData, appliedUpdates: applied, rejectedUpdates: rejected };

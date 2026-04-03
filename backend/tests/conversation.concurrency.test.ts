@@ -327,7 +327,7 @@ test("processChat retries on Prisma P2028 with a fresh conversation snapshot", a
   assert.equal(committedMessages.length, 2);
 });
 
-test("processChat keeps a conversation locked after handover and does not re-enter collection flow", async () => {
+test("processChat routes handover conversations through post-handoff mode instead of repeating the original lock message", async () => {
   const service = createService();
 
   const conversationState: ConversationState = {
@@ -345,21 +345,25 @@ test("processChat keeps a conversation locked after handover and does not re-ent
       budget: "Flexible",
       areaSqft: "250",
       roomType: "Living Room",
+      handoffCompleted: true,
     },
     createdAt: new Date(),
     updatedAt: new Date(),
   };
 
+  const committedMessages: Array<{ role: MessageRole; content: string }> = [
+    { role: MessageRole.ASSISTANT, content: "Kabir from our team will take it from here. He'll contact you shortly." },
+  ];
   const stagedMessages: Array<{ role: MessageRole; content: string }> = [];
+  let observedPostHandoffMode = false;
+  let observedStatus: ConversationStatus | null = null;
+  let observedStep: ChatStep | null = null;
 
   stubMethod(prisma, "$transaction", (async <T>(callback: (tx: object) => Promise<T>) => {
     return callback({});
   }) as typeof prisma.$transaction);
 
-  stubMethod(ConversationRepository.prototype, "findById", (async () => ({
-    ...conversationState,
-    collectedData: { ...(conversationState.collectedData as Record<string, unknown>) },
-  })) as ConversationRepository["findById"]);
+  stubConversationReads(() => conversationState, committedMessages);
 
   stubMethod(MessageRepository.prototype, "createMessage", (async (params: {
     conversationId: string;
@@ -377,12 +381,51 @@ test("processChat keeps a conversation locked after handover and does not re-ent
     };
   }) as MessageRepository["createMessage"]);
 
+  stubMethod(LeadRepository.prototype, "upsertPreparedLead", (async () => null) as unknown as LeadRepository["upsertPreparedLead"]);
   stubMethod(LeadRepository.prototype, "findByConversationId", (async () => null) as LeadRepository["findByConversationId"]);
+  stubMethod(ConversationRepository.prototype, "updateConversation", (async (params: {
+    id: string;
+    customerName: string;
+    step: ChatStep;
+    status: ConversationStatus;
+    collectedData: Record<string, unknown>;
+    expectedVersion: number;
+  }) => {
+    observedStatus = params.status;
+    observedStep = params.step;
+    return {
+      ...conversationState,
+      customerName: params.customerName,
+      step: params.step,
+      status: params.status,
+      version: params.expectedVersion + 1,
+      collectedData: { ...params.collectedData },
+    };
+  }) as ConversationRepository["updateConversation"]);
 
   (service as ConversationService & {
     processMessage: ConversationService["processMessage"];
-  }).processMessage = (async () => {
-    throw new Error("processMessage should not run once the conversation is locked for handover");
+  }).processMessage = (async (input) => {
+    observedPostHandoffMode = input.postHandoffMode === true;
+    assert.equal(input.currentStep, ChatStep.COMPLETED);
+    assert.match(input.history[input.history.length - 1] ?? "", /take it from here/i);
+
+    return {
+      reply: "Kabir will contact you soon.",
+      nextStep: ChatStep.COMPLETED,
+      collectedData: {
+        ...input.collectedData,
+        handoffCompleted: true,
+      },
+      recommendProducts: [],
+      isMoreImages: false,
+      isBrowseOnly: false,
+      quickReplies: [],
+      handover: false,
+      triggerType: null,
+      promptVersionId: null,
+      promptVersionLabel: null,
+    };
   }) as ConversationService["processMessage"];
 
   const result = await service.processChat({
@@ -390,11 +433,134 @@ test("processChat keeps a conversation locked after handover and does not re-ent
     message: "Okay please do that",
   });
 
+  assert.equal(observedPostHandoffMode, true);
   assert.equal(result.nextStep, ChatStep.COMPLETED);
   assert.equal(result.handover, true);
-  assert.match(result.replyText, /take it from here/i);
+  assert.match(result.replyText, /contact you soon/i);
+  assert.equal(observedStatus, ConversationStatus.HANDOVER);
+  assert.equal(observedStep, ChatStep.COMPLETED);
   assert.deepEqual(stagedMessages, [
     { role: MessageRole.USER, content: "Okay please do that" },
-    { role: MessageRole.ASSISTANT, content: "Kabir from our team will take it from here." },
+    { role: MessageRole.ASSISTANT, content: "Kabir will contact you soon." },
+  ]);
+});
+
+test("processChat keeps product requests working after handover while preserving HANDOVER status", async () => {
+  const service = createService();
+
+  const conversationState: ConversationState = {
+    id: "conv-handover-products",
+    channel: ConversationChannel.WEB,
+    contactId: null,
+    customerName: "Aman",
+    step: ChatStep.COMPLETED,
+    status: ConversationStatus.HANDOVER,
+    version: 4,
+    collectedData: {
+      name: "Aman",
+      productType: "Wall Panels (H-UHPC)",
+      city: "Delhi",
+      budget: "Flexible",
+      areaSqft: "250",
+      roomType: "Living Room",
+      handoffCompleted: true,
+    },
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const committedMessages: Array<{ role: MessageRole; content: string }> = [
+    { role: MessageRole.ASSISTANT, content: "Kabir from our team will take it from here. He'll contact you shortly." },
+  ];
+  const stagedMessages: Array<{ role: MessageRole; content: string }> = [];
+  let observedStatus: ConversationStatus | null = null;
+
+  stubMethod(prisma, "$transaction", (async <T>(callback: (tx: object) => Promise<T>) => {
+    return callback({});
+  }) as typeof prisma.$transaction);
+
+  stubConversationReads(() => conversationState, committedMessages);
+
+  stubMethod(MessageRepository.prototype, "createMessage", (async (params: {
+    conversationId: string;
+    role: MessageRole;
+    content: string;
+  }) => {
+    stagedMessages.push({ role: params.role, content: params.content });
+    return {
+      id: `created-${stagedMessages.length}`,
+      conversationId: params.conversationId,
+      role: params.role,
+      content: params.content,
+      metadata: null,
+      createdAt: new Date(),
+    };
+  }) as MessageRepository["createMessage"]);
+
+  stubMethod(LeadRepository.prototype, "upsertPreparedLead", (async () => null) as unknown as LeadRepository["upsertPreparedLead"]);
+  stubMethod(LeadRepository.prototype, "findByConversationId", (async () => null) as LeadRepository["findByConversationId"]);
+  stubMethod(ConversationRepository.prototype, "updateConversation", (async (params: {
+    id: string;
+    customerName: string;
+    step: ChatStep;
+    status: ConversationStatus;
+    collectedData: Record<string, unknown>;
+    expectedVersion: number;
+  }) => {
+    observedStatus = params.status;
+    return {
+      ...conversationState,
+      customerName: params.customerName,
+      step: params.step,
+      status: params.status,
+      version: params.expectedVersion + 1,
+      collectedData: { ...params.collectedData },
+    };
+  }) as ConversationRepository["updateConversation"]);
+
+  (service as ConversationService & {
+    processMessage: ConversationService["processMessage"];
+  }).processMessage = (async (input) => {
+    assert.equal(input.postHandoffMode, true);
+    return {
+      reply: "Here are some wall panel options.\nKabir will also guide you in detail when he connects.",
+      nextStep: ChatStep.COMPLETED,
+      collectedData: {
+        ...input.collectedData,
+        handoffCompleted: true,
+      },
+      recommendProducts: [
+        {
+          id: "furrow",
+          name: "Furrow",
+          category: "Wall Panels (H-UHPC)",
+          priceRange: "Rs 400+/sqft",
+          dimensions: "Panel based",
+          imageUrl: "furrow-main.webp",
+        } as any,
+      ],
+      isMoreImages: false,
+      isBrowseOnly: false,
+      quickReplies: [],
+      handover: false,
+      triggerType: null,
+      promptVersionId: null,
+      promptVersionLabel: null,
+    };
+  }) as ConversationService["processMessage"];
+
+  const result = await service.processChat({
+    conversationId: conversationState.id,
+    message: "show me wall panels",
+  });
+
+  assert.equal(result.handover, true);
+  assert.equal(observedStatus, ConversationStatus.HANDOVER);
+  assert.match(result.replyText, /wall panel options/i);
+  assert.match(result.replyText, /Kabir/i);
+  assert.equal(result.recommend_products.length, 1);
+  assert.deepEqual(stagedMessages, [
+    { role: MessageRole.USER, content: "show me wall panels" },
+    { role: MessageRole.ASSISTANT, content: "Here are some wall panel options.\nKabir will also guide you in detail when he connects." },
   ]);
 });

@@ -9,7 +9,14 @@ import { resolveActiveCategoryLock } from "./product.service.js";
 import { ResponseValidatorService, enforceReplyShape } from "./response-validator.service.js";
 
 const CALL2_REWRITE_PROMPT =
-  "You are Meera, the tone layer for a WhatsApp sales chatbot. The BACKEND_APPROVED_REPLY is the source of truth for meaning, business logic, grounding, and question intent. Rewrite ONLY the approved reply. Do not change the meaning, do not change the question being asked, do not add facts, and do not make decisions. Your job is only HOW to say it. Follow TONE_CONFIG when provided: respect toneStyle, emojiStyle, preferredAcknowledgements, and customInstructions. If preferredAcknowledgements are provided, prefer them over default acknowledgements. Keep replies short, human, and WhatsApp-style, usually 1-2 lines. Add an acknowledgement only if it sounds natural. Return plain text only.";
+  "You are Meera, the tone layer for a WhatsApp sales chatbot. The BACKEND_APPROVED_REPLY is the source of truth for meaning, business logic, grounding, and question intent. Rewrite ONLY the approved reply. Do not change the meaning, do not change the question being asked, do not add facts, and do not make decisions. Your job is only HOW to say it. Match this voice exactly: warm, polished, concise, human, and confident, like a premium Hey Concrete consultant on WhatsApp. Use CONVERSATION_HISTORY and the latest assistant message to maintain continuity, avoid stale replies, and avoid repeating the same acknowledgement twice in a row. Follow TONE_CONFIG when provided: respect toneStyle, emojiStyle, preferredAcknowledgements, and customInstructions. If preferredAcknowledgements are provided, prefer them over default acknowledgements. Keep replies short and easy to scan, usually 1-2 short lines. Use the customer's name naturally when available, but not in every message. Use 0-1 emoji in most replies and never more than 2. Ask only one clear question, and keep it at the end. Acknowledge the latest user message before moving forward with smooth transitions like 'Great choice.', 'Thanks, Laksh!', 'That works nicely.', or 'Perfect.' when they fit. Avoid robotic or generic fillers such as 'That helps narrow it down', 'Sounds good', 'Based on your preferences', 'BTW', or 'quick question'. For product or image replies, sound like a consultant: concise, warm, and easy to scan. Never mention quick replies, buttons, internal steps, or backend logic. Return plain text only.";
+
+const POST_HANDOFF_STATUS_OPTIONS = [
+  "Kabir from our team will reach out soon.",
+  "Kabir will connect with you shortly.",
+  "Kabir will take it from here and reach out soon.",
+] as const;
+const POST_HANDOFF_REMINDER = "Kabir will guide you in detail when he connects.";
 
 const STRUCTURED_QUICK_REPLY_STEPS = new Set<ChatStep>([
   ChatStep.AREA,
@@ -49,9 +56,65 @@ function buildComposedReply(primaryMessage: string | null, showroomMsg: string |
     .join("\n");
 }
 
+function parseHistoryEntry(entry: string) {
+  const match = entry.match(/^\s*(user|assistant)\s*:\s*(.*)$/i);
+  if (!match) {
+    return null;
+  }
+
+  return {
+    role: match[1].toLowerCase() as "user" | "assistant",
+    content: match[2]?.trim() ?? "",
+  };
+}
+
+function toConversationHistory(history: string[]) {
+  return history
+    .map((entry) => parseHistoryEntry(entry))
+    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+    .slice(-10);
+}
+
+function getLatestAssistantMessage(history: string[]) {
+  return [...history]
+    .reverse()
+    .map((entry) => parseHistoryEntry(entry))
+    .find((entry) => entry?.role === "assistant")
+    ?.content ?? null;
+}
+
+function getLatestAssistantAcknowledgement(history: string[]) {
+  const latestAssistantMessage = getLatestAssistantMessage(history);
+  if (!latestAssistantMessage) {
+    return null;
+  }
+
+  const firstLine = latestAssistantMessage.split(/\r?\n+/)[0]?.trim() ?? "";
+  if (!firstLine || firstLine.includes("?")) {
+    return null;
+  }
+
+  const acknowledgment = firstLine.match(/^(.{1,40}?)(?:[.!?]|,|$)/)?.[1]?.trim() ?? "";
+  return acknowledgment || null;
+}
+
 function getCurrentCategoryLabel(collectedData: CollectedData) {
   const category = resolveActiveCategoryLock(collectedData);
   return category ? category.replace(/\s*\(.*?\)\s*/g, "").trim() : "this category";
+}
+
+function getPreferredName(collectedData: CollectedData) {
+  const rawName = typeof collectedData.name === "string" ? collectedData.name.trim() : "";
+  if (!rawName) {
+    return null;
+  }
+
+  const preferred = rawName.split(/\s+/)[0]?.trim() ?? "";
+  if (!preferred || ["friend", "customer", "user"].includes(preferred.toLowerCase())) {
+    return null;
+  }
+
+  return preferred;
 }
 
 function getLatestAssistantQuestion(history: string[]) {
@@ -103,6 +166,25 @@ function getFreshStepQuestion(step: ChatStep, history: string[]) {
   return variants.find((question) => !questionsFeelRepeated(question, lastQuestion)) ?? variants[0] ?? ConversationHelper.getStepQuestion(step);
 }
 
+function pickNonRepeatingReply(options: readonly string[], history: string[]) {
+  const recentAssistantMessages = history
+    .map((entry) => parseHistoryEntry(entry))
+    .filter((entry): entry is NonNullable<typeof entry> => entry?.role === "assistant")
+    .map((entry) => enforceReplyShape(entry.content))
+    .slice(-3);
+
+  return options.find((option) => !recentAssistantMessages.includes(enforceReplyShape(option))) ?? options[0] ?? "";
+}
+
+function maybeAppendPostHandoffReminder(reply: string) {
+  const normalized = reply.toLowerCase();
+  if (!reply.trim() || /kabir|contact you|reach out|connect with|team/i.test(normalized)) {
+    return reply;
+  }
+
+  return `${reply}\n${POST_HANDOFF_REMINDER}`;
+}
+
 function getToneContext(collectedData: CollectedData) {
   const context: Record<string, string> = {};
   const addField = (key: string, value: unknown) => {
@@ -112,6 +194,7 @@ function getToneContext(collectedData: CollectedData) {
     context[key] = value.trim();
   };
 
+  addField("name", collectedData.name);
   addField("productType", collectedData.productType);
   addField("city", collectedData.city);
   addField("roomType", collectedData.roomType);
@@ -123,15 +206,15 @@ function getToneContext(collectedData: CollectedData) {
 
 function buildInvalidReply(currentStep: ChatStep, notes: string[]) {
   if (currentStep === ChatStep.NAME && notes.includes("name_refusal")) {
-    return "A nickname works. What should I call you?";
+    return "A nickname works too. What should I call you?";
   }
 
   if (currentStep === ChatStep.STYLE) {
-    return "Please share a style direction. Minimal, modern, geometric, textured, or statement?";
+    return "Could you share the look you have in mind? Minimal, modern, geometric, textured, or statement.";
   }
 
   if (currentStep === ChatStep.TIMELINE) {
-    return "Please share a rough timeline. This Month, 1-3 Months, 3-6 Months, or Just Exploring?";
+    return "Could you share your timeline? This Month, 1-3 Months, 3-6 Months, or Just Exploring.";
   }
 
   return ConversationHelper.getStepQuestion(currentStep);
@@ -139,11 +222,11 @@ function buildInvalidReply(currentStep: ChatStep, notes: string[]) {
 
 function buildRedirectReply(nextStep: ChatStep, hasShownProducts: boolean, history: string[]) {
   if (nextStep === ChatStep.COMPLETED && hasShownProducts) {
-    return "I can compare these, share more photos, or help with the showroom. What would you like?";
+    return "I can help compare these, share more photos, or help with the showroom. What would you like?";
   }
 
   if (nextStep === ChatStep.COMPLETED) {
-    return "I can help with options, comparisons, or showroom details. What would you like?";
+    return "I can help with options, comparisons, or showroom details. What would you like to see?";
   }
 
   return getFreshStepQuestion(nextStep, history);
@@ -255,12 +338,19 @@ export class ResponseService {
     budgetGuard: boolean;
     exhausted: boolean;
     toneConfig?: ToneConfig | null;
+    postHandoffMode?: boolean;
+    postHandoffInteractive?: boolean;
   }): Promise<ResponsePlan> {
     const faqAnswer = params.faqResults[0]?.answer ?? null;
     const city = String(params.collectedData.city ?? "").trim();
     const categoryLabel = getCurrentCategoryLabel(params.collectedData);
+    const preferredName = getPreferredName(params.collectedData);
     const nextQuestion = params.nextStep === ChatStep.COMPLETED ? null : getFreshStepQuestion(params.nextStep, params.recentHistory);
     const showroomParts = splitShowroomMessage(params.showroomMsg);
+    const conversationHistory = toConversationHistory(params.recentHistory);
+    const latestAssistantMessage = getLatestAssistantMessage(params.recentHistory);
+    const latestAssistantAcknowledgement = getLatestAssistantAcknowledgement(params.recentHistory);
+    const isPostHandoffStatusTurn = params.postHandoffMode === true && params.postHandoffInteractive !== true && !params.handover;
     const isControlTurn =
       params.handover ||
       params.intent.intent === "PRODUCT_SWITCH" ||
@@ -276,27 +366,30 @@ export class ResponseService {
     let validatorUsed = false;
     let validatorReason: string | null = isControlTurn ? "call2_skipped_control_turn" : null;
 
-    if (params.handover) {
+    if (isPostHandoffStatusTurn) {
+      approvedReply = pickNonRepeatingReply(POST_HANDOFF_STATUS_OPTIONS, params.recentHistory);
+      allowPhrasing = true;
+    } else if (params.handover) {
       approvedReply = TEAM_HANDOVER_MESSAGE;
     } else if (params.intent.intent === "PRODUCT_SWITCH") {
       if (params.budgetGuard) {
         approvedReply = "Wall panels usually start around Rs 400+/sqft.\nWould you like to see Breeze Blocks or Brick Cladding instead?";
       } else {
         approvedReply = params.recommendProducts.length > 0
-          ? `Switching to ${categoryLabel}.\nHere are some options.`
+          ? `Switching to ${categoryLabel}.\nHere are a few options that could work well.`
           : `Switching to ${categoryLabel}.`;
       }
     } else if (params.intent.intent === "SHOW_PRODUCTS") {
       if (params.recommendProducts.length > 0) {
-        approvedReply = `Here are some ${categoryLabel.toLowerCase()} options.`;
+        approvedReply = `Here are a few ${categoryLabel.toLowerCase()} options that could work well for your space.`;
       } else if (params.exhausted) {
         approvedReply = `I don't have more verified ${categoryLabel.toLowerCase()} options right now.`;
       } else {
-        approvedReply = `I can show you ${categoryLabel.toLowerCase()} options.`;
+        approvedReply = `I can show you a few ${categoryLabel.toLowerCase()} options.`;
       }
     } else if (params.intent.intent === "MORE_IMAGES") {
       approvedReply = params.recommendProducts.length > 0
-        ? "Here are more images."
+        ? "Of course. Here are a few more images."
         : "Tell me which option you'd like to see more images of.";
     } else if (params.safetyFlags?.includes("quote_request")) {
       approvedReply = "I can share a rough range here, but not a final quote. If you'd like, I can connect you with our team for an exact quote.";
@@ -304,17 +397,21 @@ export class ResponseService {
       approvedReply = "I can't confirm discounts here, but I can help with the right options or connect you with our team.";
     } else if (params.intent.intent === "PURCHASE_INTENT") {
       if (!city) {
-        approvedReply = "Which city should I check for you?";
+        approvedReply = "I'd be happy to help with that.\nWhich city should I check for you?";
       } else if (params.showroomMsg) {
         approvedReply = [
-          `We have a showroom in ${city}.`,
+          preferredName
+            ? `Thanks, ${preferredName}! We have a showroom in ${city}, so you're close to it.`
+            : `We have a showroom in ${city}, so you're close to it.`,
           showroomParts.details,
-          "Would you like the contact or should I connect you with our team?",
+          "Would you like the contact details or should I connect you with our team?",
         ]
           .filter((item) => item && item.trim())
           .join("\n");
       } else {
-        approvedReply = `I can help you take this forward in ${city}.\nWould you like me to connect you with our team?`;
+        approvedReply = preferredName
+          ? `Thanks, ${preferredName}. I can help you take this forward in ${city}.\nWould you like me to connect you with our team?`
+          : `I can help you take this forward in ${city}.\nWould you like me to connect you with our team?`;
       }
     } else if (params.intent.intent === "SECURITY_ATTACK") {
       approvedReply = "I can help with options, design guidance, or showroom details.";
@@ -327,12 +424,16 @@ export class ResponseService {
         ? "We can update any specific detail here, or start a new chat if you'd like."
         : "We can start fresh from here. Tell me the detail you'd like to change.";
     } else if (params.intent.intent === "FAQ" && faqAnswer) {
-      approvedReply = params.currentStep === ChatStep.COMPLETED
+      approvedReply = params.postHandoffMode
+        ? faqAnswer
+        : params.currentStep === ChatStep.COMPLETED
         ? `${faqAnswer}\nWould you like help comparing options or checking a showroom?`
         : buildComposedReply(faqAnswer, params.showroomMsg, nextQuestion);
       allowPhrasing = !params.showroomMsg;
     } else if (params.intent.intent === "FAQ") {
-      approvedReply = buildRedirectReply(params.nextStep, params.collectedData.hasShownProducts === true, params.recentHistory);
+      approvedReply = params.postHandoffMode
+        ? "I don't have verified details on that here.\nKabir can help when he connects."
+        : buildRedirectReply(params.nextStep, params.collectedData.hasShownProducts === true, params.recentHistory);
     } else if (params.intent.intent === "IRRELEVANT" || params.intent.intent === "SMALL_TALK") {
       approvedReply = buildRedirectReply(params.nextStep, params.collectedData.hasShownProducts === true, params.recentHistory);
     } else if (params.budgetGuard) {
@@ -340,14 +441,18 @@ export class ResponseService {
     } else if (params.intent.intent === "MORE_PRODUCTS" && params.exhausted) {
       approvedReply = `All ${categoryLabel.toLowerCase()} options are shown for now.\nWould you like to compare these or explore another category?`;
     } else if (params.nextStep === ChatStep.COMPLETED && params.recommendProducts.length > 0) {
-      approvedReply = "Here are a few options.\nSelect one and I can compare them.";
+      approvedReply = "Here are a few options that could work well for your space.\nPick one and I can compare them for you.";
     } else if (params.currentStep === ChatStep.COMPLETED && params.collectedData.hasShownProducts && params.recommendProducts.length === 0) {
-      approvedReply = "I can compare these, share more images, or help with the showroom.";
+      approvedReply = "I can help compare these, share more images, or help with the showroom.";
     } else if (params.intent.intent === "INVALID") {
       approvedReply = buildInvalidReply(params.nextStep === ChatStep.COMPLETED ? params.currentStep : params.nextStep, params.intent.notes);
     } else {
       approvedReply = buildComposedReply(null, params.showroomMsg, nextQuestion);
       allowPhrasing = !params.showroomMsg;
+    }
+
+    if (params.postHandoffMode && params.postHandoffInteractive && !params.handover) {
+      approvedReply = maybeAppendPostHandoffReminder(approvedReply);
     }
 
     if (
@@ -368,9 +473,12 @@ export class ResponseService {
           userMessage: params.userMessage,
           currentStep: params.nextStep,
           intent: params.intent.intent,
-          recentHistory: params.recentHistory.slice(-6),
+          conversationHistory,
+          latestAssistantMessage,
+          latestAssistantAcknowledgement,
           toneContext: getToneContext(params.collectedData),
           toneConfig: normalizedToneConfig,
+          postHandoffMode: params.postHandoffMode === true,
         };
         const phrased = await this.deps.groqTextCompletion(
           CALL2_REWRITE_PROMPT,

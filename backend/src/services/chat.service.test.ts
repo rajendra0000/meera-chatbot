@@ -123,6 +123,7 @@ function buildCompleteLead(overrides: Record<string, unknown> = {}) {
 test("Call 1 success keeps backend reply neutral and lets Call 2 apply admin tone", async () => {
   mockCatalogLookups();
 
+  let call2System = "";
   let call2Payload: any = null;
   let validatorPayload: any = null;
   __setChatServiceDepsForTests({
@@ -144,6 +145,7 @@ test("Call 1 success keeps backend reply neutral and lets Call 2 apply admin ton
         validatorPayload = JSON.parse(user);
         return "YES";
       }
+      call2System = system;
       call2Payload = JSON.parse(user);
       return "Thik hai\nAbout how much area do you want to cover?";
     },
@@ -162,12 +164,25 @@ test("Call 1 success keeps backend reply neutral and lets Call 2 apply admin ton
   assert.match(String(result.collectedData.budget), /Under .*200\/sqft/i);
   assert.equal(call2Payload.currentStep, ChatStep.AREA);
   assert.equal(call2Payload.intent, "STEP_ANSWER");
+  assert.equal(call2Payload.toneContext.name, "Aman");
   assert.equal(call2Payload.toneContext.productType, "Wall Murals");
   assert.equal(call2Payload.toneContext.city, "Delhi");
+  assert.deepEqual(call2Payload.conversationHistory, [
+    {
+      role: "assistant",
+      content: "What budget range feels right for this project?",
+    },
+  ]);
+  assert.equal(call2Payload.latestAssistantMessage, "What budget range feels right for this project?");
+  assert.equal(call2Payload.latestAssistantAcknowledgement, null);
   assert.equal(call2Payload.toneConfig.preferredAcknowledgements[0], "Thik hai");
   assert.equal(call2Payload.toneConfig.toneStyle, "casual Hindi-English");
   assert.match(call2Payload.approvedReply, /^About how much area/i);
   assert.doesNotMatch(call2Payload.approvedReply, /Nice|Got it|Perfect|Makes sense|Alright|Thik hai|Samajh gaya/i);
+  assert.match(call2System, /CONVERSATION_HISTORY/i);
+  assert.match(call2System, /avoid repeating the same acknowledgement twice in a row/i);
+  assert.match(call2System, /Use the customer's name naturally when available/i);
+  assert.match(call2System, /Avoid robotic or generic fillers/i);
   assert.equal(validatorPayload.INTENT, "STEP_ANSWER");
   assert.match(validatorPayload.BACKEND_APPROVED_REPLY, /About how much area/i);
   assert.equal(result.replySource, "phrased");
@@ -764,6 +779,86 @@ test("handoff replies stay clean and never attach quick replies", async () => {
   assert.match(result.reply, /Kabir|team/i);
 });
 
+test("post-handoff casual messages do not repeat the original handoff line", async () => {
+  mockCatalogLookups();
+
+  __setChatServiceDepsForTests({
+    getActivePromptBundle: async () => promptBundle,
+    searchFaqByKeywords: async () => [],
+    groqJsonCompletion: async () => {
+      throw new Error("llm disabled");
+    },
+    groqTextCompletion: async () => "",
+  });
+
+  const result = await processMessage({
+    message: "okay thanks",
+    currentStep: ChatStep.COMPLETED,
+    collectedData: {
+      ...buildCompleteLead({
+        hasShownProducts: true,
+        shownProductIds: ["furrow"],
+        handoffCompleted: true,
+      }),
+    },
+    history: ["assistant: Kabir from our team will take it from here. He'll contact you shortly."],
+    lastRecommendedProductIds: ["furrow"],
+    postHandoffMode: true,
+  });
+
+  assert.equal(result.nextStep, ChatStep.COMPLETED);
+  assert.equal(result.handover, false);
+  assert.deepEqual(result.quickReplies, []);
+  assert.doesNotMatch(result.reply, /take it from here/i);
+  assert.match(result.reply, /reach out soon|connect with you shortly|reach out shortly/i);
+});
+
+test("post-handoff product requests still show products and add a Kabir reminder", async () => {
+  mockCatalogLookups(recentProducts);
+
+  __setChatServiceDepsForTests({
+    getActivePromptBundle: async () => promptBundle,
+    searchFaqByKeywords: async () => [],
+    groqJsonCompletion: async () =>
+      JSON.stringify({
+        messageType: "SHOW_PRODUCTS",
+        reply: "[REPLY GENERATED IN CALL 2]",
+        extractedField: "productType",
+        extractedValue: "Wall Panels (H-UHPC)",
+        switchIntent: null,
+        nextStep: "COMPLETED",
+        recommendProductIds: [],
+        handover: false,
+      }),
+    groqTextCompletion: async () => {
+      throw new Error("Call 2 should stay skipped on product control turns");
+    },
+  });
+
+  const result = await processMessage({
+    message: "show wall panels",
+    currentStep: ChatStep.COMPLETED,
+    collectedData: {
+      ...buildCompleteLead({
+        productType: "Wall Panels (H-UHPC)",
+        activeCategoryLock: "Wall Panels (H-UHPC)",
+        hasShownProducts: true,
+        shownProductIds: ["furrow"],
+        handoffCompleted: true,
+      }),
+    },
+    history: ["assistant: Kabir from our team will take it from here. He'll contact you shortly."],
+    lastRecommendedProductIds: ["furrow"],
+    postHandoffMode: true,
+  });
+
+  assert.equal(result.nextStep, ChatStep.COMPLETED);
+  assert.equal(result.recommendProducts.length, 3);
+  assert.deepEqual(result.quickReplies, []);
+  assert.match(result.reply, /options/i);
+  assert.match(result.reply, /Kabir/i);
+});
+
 test("repeat answers do not regress step advancement", async () => {
   mockCatalogLookups();
 
@@ -1007,7 +1102,7 @@ test("style answers advance to timeline and attach only timeline quick replies",
   assert.equal(result.collectedData.style, "Modern");
   assert.deepEqual(result.quickReplies, ["This Month", "1-3 Months", "3-6 Months", "Just Exploring"]);
   assert.equal(result.recommendProducts.length, 0);
-  assert.match(result.reply, /When are you planning this/i);
+  assert.match(result.reply, /When are you (planning|hoping) to start/i);
 });
 
 test("deterministic step replies stay short and neutral across turns", async () => {
@@ -1270,8 +1365,151 @@ test("robotic recap phrasing falls back to the approved short reply", async () =
   });
 
   assert.equal(result.nextStep, ChatStep.AREA);
-  assert.match(result.reply, /About how much area do you want to cover/i);
+  assert.match(result.reply, /About how much area (do you want|would you like) to cover/i);
   assert.doesNotMatch(result.reply, /It seems|So you're/i);
   assert.ok(countLines(result.reply) <= 3);
   assert.ok(((result.reply.match(/\?/g) ?? []).length) <= 1);
+});
+
+test("timeline phrases do not corrupt city extraction outside the city step", async () => {
+  mockCatalogLookups();
+
+  __setChatServiceDepsForTests({
+    getActivePromptBundle: async () => promptBundle,
+    searchFaqByKeywords: async () => [],
+    groqJsonCompletion: async () => {
+      throw new Error("llm disabled");
+    },
+    groqTextCompletion: async () => "",
+  });
+
+  const result = await processMessage({
+    message: "in a few months",
+    currentStep: ChatStep.TIMELINE,
+    collectedData: {
+      name: "Aman",
+      productType: "Wall Panels (H-UHPC)",
+      budget: "Flexible",
+      areaSqft: "250",
+      roomType: "Living Room",
+      style: "Modern",
+    },
+    history: ["assistant: When are you planning this?"],
+    lastRecommendedProductIds: [],
+  });
+
+  assert.equal(result.collectedData.city, undefined);
+  assert.equal(result.collectedData.timeline, "1-3 Months");
+  assert.equal(result.nextStep, ChatStep.CITY);
+});
+
+test("FAQ turns during collection answer the question without advancing the current step", async () => {
+  mockCatalogLookups();
+
+  __setChatServiceDepsForTests({
+    getActivePromptBundle: async () => promptBundle,
+    searchFaqByKeywords: async () => [{
+      question: "what's your price range?",
+      answer: "Pricing depends on the product category and finish.",
+    }],
+    groqJsonCompletion: async () => {
+      throw new Error("llm disabled");
+    },
+    groqTextCompletion: async () => "",
+  });
+
+  const result = await processMessage({
+    message: "₹400+ and also what's your price range?",
+    currentStep: ChatStep.BUDGET,
+    collectedData: {
+      name: "Aman",
+      productType: "Wall Panels (H-UHPC)",
+      city: "Delhi",
+    },
+    history: ["assistant: What budget range are you considering?"],
+    lastRecommendedProductIds: [],
+  });
+
+  assert.match(String(result.collectedData.budget), /400\+\/sqft|400/i);
+  assert.equal(result.nextStep, ChatStep.BUDGET);
+  assert.match(result.reply, /Pricing depends on the product category and finish/i);
+  assert.match(result.reply, /What budget range are you considering|Could you share the budget range for this project/i);
+});
+
+test("natural escalation phrasing triggers handover", async () => {
+  mockCatalogLookups();
+
+  __setChatServiceDepsForTests({
+    getActivePromptBundle: async () => promptBundle,
+    searchFaqByKeywords: async () => [],
+    groqJsonCompletion: async () => {
+      throw new Error("llm disabled");
+    },
+    groqTextCompletion: async () => "",
+  });
+
+  const result = await processMessage({
+    message: "connect me to someone",
+    currentStep: ChatStep.COMPLETED,
+    collectedData: buildCompleteLead(),
+    history: ["assistant: Here are a few options I'd shortlist for you."],
+    lastRecommendedProductIds: [],
+  });
+
+  assert.equal(result.handover, true);
+  assert.equal(result.nextStep, ChatStep.COMPLETED);
+  assert.match(result.reply, /Kabir/i);
+});
+
+test("plain order intent does not trigger handover without a team or help cue", async () => {
+  mockCatalogLookups();
+
+  __setChatServiceDepsForTests({
+    getActivePromptBundle: async () => promptBundle,
+    searchFaqByKeywords: async () => [],
+    groqJsonCompletion: async () => {
+      throw new Error("llm disabled");
+    },
+    groqTextCompletion: async () => "",
+  });
+
+  const result = await processMessage({
+    message: "I want to order",
+    currentStep: ChatStep.COMPLETED,
+    collectedData: buildCompleteLead({
+      hasShownProducts: true,
+      shownProductIds: ["furrow"],
+    }),
+    history: ["assistant: Here are a few options I'd shortlist for you."],
+    lastRecommendedProductIds: ["furrow"],
+  });
+
+  assert.equal(result.handover, false);
+  assert.equal(result.nextStep, ChatStep.COMPLETED);
+  assert.match(result.reply, /connect you with our team|showroom/i);
+});
+
+test("dealer or franchise info questions do not trigger handover without contact or help cues", async () => {
+  mockCatalogLookups();
+
+  __setChatServiceDepsForTests({
+    getActivePromptBundle: async () => promptBundle,
+    searchFaqByKeywords: async () => [],
+    groqJsonCompletion: async () => {
+      throw new Error("llm disabled");
+    },
+    groqTextCompletion: async () => "",
+  });
+
+  const result = await processMessage({
+    message: "Do you have a dealer in Pune?",
+    currentStep: ChatStep.COMPLETED,
+    collectedData: buildCompleteLead(),
+    history: ["assistant: Here are a few options I'd shortlist for you."],
+    lastRecommendedProductIds: [],
+  });
+
+  assert.equal(result.handover, false);
+  assert.equal(result.nextStep, ChatStep.COMPLETED);
+  assert.doesNotMatch(result.reply, /Kabir|take it from here/i);
 });

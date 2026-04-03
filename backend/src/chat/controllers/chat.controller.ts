@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import { ConversationChannel } from "@prisma/client";
 import { processChat } from "../../services/chat.service.js";
 import { prisma } from "../../lib/prisma.js";
@@ -18,6 +18,14 @@ export async function sendMessage(req: Request, res: Response): Promise<void> {
     const result = await processChat(body);
     res.json(result);
   } catch (error) {
+    if (error instanceof ZodError) {
+      res.status(400).json({
+        error: "Invalid request",
+        details: error.errors,
+      });
+      return;
+    }
+
     console.error("[chat.controller.sendMessage]", error);
     res.status(500).json({ error: "Internal server error" });
   }

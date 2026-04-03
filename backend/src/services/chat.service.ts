@@ -26,6 +26,7 @@ export async function processMessage(params: {
   collectedData: CollectedData;
   history: string[];
   lastRecommendedProductIds: string[];
+  postHandoffMode?: boolean;
 }): Promise<ProcessMessageResult> {
   return getConversationService().processMessage(params);
 }

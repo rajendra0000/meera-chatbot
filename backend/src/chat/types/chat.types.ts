@@ -35,6 +35,7 @@ export interface ProcessMessageInput {
   collectedData: CollectedData;
   history: string[];
   lastRecommendedProductIds: string[];
+  postHandoffMode?: boolean;
 }
 
 export interface ProcessMessageOutput {

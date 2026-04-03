@@ -39,7 +39,7 @@ const FILLER_ONLY_PATTERNS = [
 ];
 
 const VALIDATOR_PROMPT =
-  "You are a strict reply validator for a WhatsApp sales chatbot. The BACKEND_APPROVED_REPLY is the source of truth. Judge ONLY whether the CANDIDATE_REPLY stays faithful to it, matches the user's latest message, fits the recent conversation, and does not add facts or ask a different question. Answer ONLY YES or NO.";
+  "You are a strict reply validator for a WhatsApp sales chatbot. The BACKEND_APPROVED_REPLY is the source of truth. Use CONVERSATION_HISTORY only as context. Judge ONLY whether the CANDIDATE_REPLY stays faithful to the backend reply, matches the user's latest message, fits the recent conversation, and does not add facts or ask a different question. Answer ONLY YES or NO.";
 
 type QuestionTopic =
   | "name"
@@ -68,6 +68,33 @@ type ValidationInput = {
   showroomMsg: string | null;
   collectedData: CollectedData;
 };
+
+function parseHistoryEntry(entry: string) {
+  const match = entry.match(/^\s*(user|assistant)\s*:\s*(.*)$/i);
+  if (!match) {
+    return null;
+  }
+
+  return {
+    role: match[1].toLowerCase() as "user" | "assistant",
+    content: match[2]?.trim() ?? "",
+  };
+}
+
+function getLatestAssistantMessage(history: string[]) {
+  return [...history]
+    .reverse()
+    .map((entry) => parseHistoryEntry(entry))
+    .find((entry) => entry?.role === "assistant")
+    ?.content ?? null;
+}
+
+function toConversationHistory(history: string[]) {
+  return history
+    .map((entry) => parseHistoryEntry(entry))
+    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+    .slice(-10);
+}
 
 function sanitizeReply(text: string) {
   return text
@@ -305,6 +332,7 @@ export class ResponseValidatorService {
 
     const approvedQuestion = extractPrimaryQuestion(approvedReply);
     const candidateQuestion = extractPrimaryQuestion(candidate);
+    const latestAssistantMessage = getLatestAssistantMessage(params.recentHistory);
 
     if (Boolean(approvedQuestion) !== Boolean(candidateQuestion)) {
       return reject(approvedReply, "question_presence_changed", false);
@@ -317,6 +345,14 @@ export class ResponseValidatorService {
     const recentQuestions = getRecentAssistantQuestions(params.recentHistory);
     if (candidateQuestion && recentQuestions.some((question) => shareMeaningfulQuestionIntent(question, candidateQuestion))) {
       return reject(approvedReply, "repeated_question", false);
+    }
+
+    if (
+      latestAssistantMessage &&
+      normalizeWhitespace(candidate).toLowerCase() === normalizeWhitespace(latestAssistantMessage).toLowerCase() &&
+      normalizeWhitespace(approvedReply).toLowerCase() !== normalizeWhitespace(latestAssistantMessage).toLowerCase()
+    ) {
+      return reject(approvedReply, "repeated_reply", false);
     }
 
     const userSignals = collectSignals(params.userMessage, params.recommendProducts, params.collectedData);
@@ -376,7 +412,7 @@ export class ResponseValidatorService {
         VALIDATOR_PROMPT,
         JSON.stringify({
           USER_MESSAGE: params.userMessage,
-          RECENT_HISTORY: params.recentHistory.slice(-6),
+          CONVERSATION_HISTORY: toConversationHistory(params.recentHistory),
           CURRENT_STEP: params.currentStep,
           INTENT: params.intent.intent,
           BACKEND_APPROVED_REPLY: approvedReply,

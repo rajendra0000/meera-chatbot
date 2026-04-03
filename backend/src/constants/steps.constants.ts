@@ -25,12 +25,12 @@ export const QUICK_REPLIES: Record<string, string[]> = {
 export const STEP_PROMPTS: Record<string, string> = {
   NAME: "What should I call you?",
   PRODUCT_TYPE: "What are you exploring today: wall panels, wall murals, breeze blocks, or brick cladding?",
-  CITY: "Which city should I check for you?",
+  CITY: "Could you tell me which city this project is in?",
   BUDGET: "What budget range are you considering? A rough range is fine.",
-  AREA: "About how much area do you want to cover?",
+  AREA: "About how much area would you like to cover?",
   ROOM_TYPE: "Which room or space is this for?",
-  STYLE: "What look are you leaning toward: minimal, modern, geometric, textured, or statement?",
-  TIMELINE: "When are you planning this: This Month, 1-3 Months, 3-6 Months, or Just Exploring?",
+  STYLE: "What kind of look do you have in mind: minimal, modern, geometric, textured, or statement?",
+  TIMELINE: "When are you hoping to start: This Month, 1-3 Months, 3-6 Months, or Just Exploring?",
 };
 
 export const REQUIRED_FIELDS: Array<[string, ChatStep]> = [

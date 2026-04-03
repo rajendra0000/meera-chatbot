@@ -26,7 +26,6 @@ import { ResponseService } from "./response.service.js";
 import { ChannelRendererService } from "./channel-renderer.service.js";
 import { withRetries } from "../utils/retry.util.js";
 import { prepareLeadUpsert } from "../../services/lead.service.js";
-import { HANDOVER_LOCKED_MESSAGE } from "./handover.service.js";
 import { canonicalizeBudget } from "../utils/budget.util.js";
 
 const CONVERSATION_WRITE_ATTEMPTS = 3;
@@ -195,6 +194,30 @@ function isRestartRequest(message: string) {
   );
 }
 
+function shouldHandleNormallyAfterHandoff(params: {
+  intent: string;
+  appliedUpdates: Array<{ field: string }>;
+  requestedProductSwitch: string | null;
+  visualControlMode: "show_products" | "more_images" | null;
+}) {
+  if (params.visualControlMode || params.requestedProductSwitch) {
+    return true;
+  }
+
+  if (params.appliedUpdates.length > 0) {
+    return true;
+  }
+
+  return [
+    "SHOW_PRODUCTS",
+    "MORE_IMAGES",
+    "MORE_PRODUCTS",
+    "PRODUCT_SWITCH",
+    "FAQ",
+    "PURCHASE_INTENT",
+  ].includes(params.intent);
+}
+
 export class ConversationService {
   private readonly contextService = new ContextService();
   private readonly safetyService = new SafetyService();
@@ -224,7 +247,7 @@ export class ConversationService {
       currentStep: input.currentStep,
       currentData: input.collectedData,
       forcedIntent: safety.intentOverride,
-      handoverRequested: explicitHandover,
+      handoverRequested: input.postHandoffMode ? false : explicitHandover,
     });
 
     const deterministicUpdates = this.entityExtractorService.buildDeterministicUpdates(
@@ -256,6 +279,32 @@ export class ConversationService {
           }
         : intent;
 
+    if (input.postHandoffMode && normalizedIntent.handover) {
+      normalizedIntent = {
+        ...normalizedIntent,
+        handover: false,
+        intent: normalizedIntent.fieldUpdates.length > 0
+          ? input.currentStep === ChatStep.COMPLETED
+            ? "FIELD_UPDATE"
+            : "STEP_ANSWER"
+          : "SMALL_TALK",
+        confidence: Math.max(normalizedIntent.confidence, 0.8),
+      };
+    }
+
+    if (
+      !input.postHandoffMode &&
+      !normalizedIntent.handover &&
+      this.handoverService.detectIntentDrivenHandover(input.message, normalizedIntent.intent)
+    ) {
+      normalizedIntent = {
+        ...normalizedIntent,
+        intent: "HANDOVER",
+        handover: true,
+        confidence: Math.max(normalizedIntent.confidence, 0.9),
+      };
+    }
+
     if (!normalizedIntent.handover) {
       if (requestedProductSwitch) {
         normalizedIntent = {
@@ -278,9 +327,24 @@ export class ConversationService {
       }
     }
 
-    let nextData = { ...applied.collectedData };
+    const postHandoffInteractive = input.postHandoffMode
+      ? shouldHandleNormallyAfterHandoff({
+          intent: normalizedIntent.intent,
+          appliedUpdates: applied.appliedUpdates,
+          requestedProductSwitch,
+          visualControlMode,
+        })
+      : false;
+
+    let nextData = {
+      ...applied.collectedData,
+      ...(input.postHandoffMode ? { handoffCompleted: true } : {}),
+    };
     if (requestedProductSwitch) {
       nextData = applyProductSwitchState(nextData, requestedProductSwitch);
+      if (input.postHandoffMode) {
+        nextData.handoffCompleted = true;
+      }
     }
 
     if (!normalizedIntent.handover && !requestedProductSwitch && normalizedIntent.intent === "MORE_IMAGES") {
@@ -324,8 +388,13 @@ export class ConversationService {
       appliedUpdates: applied.appliedUpdates,
       rejectedUpdates: applied.rejectedUpdates,
       intent: normalizedIntent,
-      handoverTrigger: explicitHandover ? "Explicit Team Request" : null,
+      handoverTrigger: !input.postHandoffMode && explicitHandover ? "Explicit Team Request" : null,
     });
+    if (normalizedIntent.intent === "FAQ" && input.currentStep !== ChatStep.COMPLETED) {
+      transition.nextStep = input.currentStep;
+      transition.status = ConversationStatus.ACTIVE;
+      transition.reason = "faq_step_lock";
+    }
     const activeCategoryLock = resolveActiveCategoryLock(transition.collectedData);
     transition.collectedData = {
       ...transition.collectedData,
@@ -421,6 +490,8 @@ export class ConversationService {
       budgetGuard: isBudgetGuard(transition.collectedData) && !allowBudgetBypass,
       exhausted,
       toneConfig: promptBundle.toneConfig ?? null,
+      postHandoffMode: input.postHandoffMode === true,
+      postHandoffInteractive,
     });
 
     return {
@@ -497,77 +568,33 @@ export class ConversationService {
       if (!latestConversation) {
         throw new Error(`Conversation ${conversationId} no longer exists.`);
       }
-
-      if (latestConversation.status === ConversationStatus.HANDOVER && !isRestartRequest(incomingMessage)) {
-        await prisma.$transaction(async (tx) => {
-          const txMessageRepository = new MessageRepository(tx);
-
-          await txMessageRepository.createMessage({
-            conversationId: latestConversation.id,
-            role: MessageRole.USER,
-            content: incomingMessage,
-          });
-
-          await txMessageRepository.createMessage({
-            conversationId: latestConversation.id,
-            role: MessageRole.ASSISTANT,
-            content: HANDOVER_LOCKED_MESSAGE,
-          metadata: {
-            nextStep: ChatStep.COMPLETED,
-            recommendedProductIds: [],
-            handover: true,
-            triggerType: "Locked Handover",
-            promptVersionId: promptBundle.promptVersionId,
-            promptVersionLabel: promptBundle.promptVersionLabel,
-            replySource: "deterministic",
-            validatorAccepted: false,
-            validatorUsed: false,
-            validatorReason: "handover_locked",
-          },
-        });
-        });
-
-        const refreshedLead = await this.leadRepository.findByConversationId(latestConversation.id);
-        const payload = this.channelRenderer.renderResponse({
-          reply: HANDOVER_LOCKED_MESSAGE,
-          stepQuestion: null,
-          nextStep: ChatStep.COMPLETED,
-          quickReplies: [],
-          recommendProducts: [],
-          isMoreImages: false,
-          isBrowseOnly: false,
-          handover: true,
-          triggerType: "Locked Handover",
-          promptVersionId: promptBundle.promptVersionId,
-          promptVersionLabel: promptBundle.promptVersionLabel,
-        });
-
-        return {
-          conversationId: latestConversation.id,
-          ...payload,
-          nextStep: ChatStep.COMPLETED,
-          collectedData: (latestConversation.collectedData as CollectedData | null) ?? {},
-          lead: refreshedLead,
-        };
-      }
+      const postHandoffMode =
+        latestConversation.status === ConversationStatus.HANDOVER &&
+        !isRestartRequest(incomingMessage);
 
       const [recentMessages, historicalMessages, existingLead] = await Promise.all([
-        this.messageRepository.findRecentMessages(latestConversation.id, 6),
+        this.messageRepository.findRecentMessages(latestConversation.id, 10),
         this.messageRepository.findMessagesByConversationId(latestConversation.id),
         this.leadRepository.findByConversationId(latestConversation.id),
       ]);
-      const history = recentMessages.reverse().map((message) => `${message.role}: ${message.content}`).slice(-6);
+      const chronologicalRecentMessages = [...recentMessages].reverse();
+      const history = chronologicalRecentMessages.map((message) => `${message.role}: ${message.content}`).slice(-10);
       const lastRecommendedProductIds = recentMessages.find((message) => {
         const metadata = message.metadata as { recommendedProductIds?: string[] } | null;
         return Array.isArray(metadata?.recommendedProductIds) && metadata.recommendedProductIds.length > 0;
       });
+      const processingData = {
+        ...((latestConversation.collectedData as CollectedData | null) ?? {}),
+        ...(postHandoffMode ? { handoffCompleted: true } : {}),
+      };
 
       const result = await this.processMessage({
         message: incomingMessage,
-        currentStep: latestConversation.step,
-        collectedData: (latestConversation.collectedData as CollectedData | null) ?? {},
+        currentStep: postHandoffMode ? ChatStep.COMPLETED : latestConversation.step,
+        collectedData: processingData,
         history,
         lastRecommendedProductIds: ((lastRecommendedProductIds?.metadata as { recommendedProductIds?: string[] } | null)?.recommendedProductIds ?? []),
+        postHandoffMode,
       });
 
       const userMessages = [
@@ -591,10 +618,16 @@ export class ConversationService {
         userMessages,
       });
 
-      const finalData = leadPlan?.collectedData ?? result.collectedData;
-      const finalHandover = result.handover || Boolean(leadPlan?.trigger);
-      const finalTriggerType = result.triggerType ?? leadPlan?.trigger ?? null;
+      const finalData = { ...(leadPlan?.collectedData ?? result.collectedData) };
+      const finalHandover = postHandoffMode || result.handover || Boolean(leadPlan?.trigger);
+      const finalTriggerType = result.triggerType ?? leadPlan?.trigger ?? (postHandoffMode ? "Post Handover" : null);
       const finalStep = finalHandover ? ChatStep.COMPLETED : result.nextStep;
+
+      if (finalHandover) {
+        finalData.handoffCompleted = true;
+      } else {
+        delete finalData.handoffCompleted;
+      }
 
       await prisma.$transaction(async (tx) => {
         const txMessageRepository = new MessageRepository(tx);
@@ -640,7 +673,7 @@ export class ConversationService {
             replySource: result.replySource ?? "deterministic",
             validatorAccepted: result.validatorAccepted ?? false,
             validatorUsed: result.validatorUsed ?? false,
-            validatorReason: result.validatorReason ?? null,
+            validatorReason: result.validatorReason ?? (postHandoffMode ? "post_handover" : null),
           },
         });
       });

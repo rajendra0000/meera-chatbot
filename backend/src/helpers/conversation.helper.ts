@@ -15,26 +15,32 @@ const STEP_PROMPT_VARIANTS: Partial<Record<ChatStep, string[]>> = {
   [ChatStep.CITY]: [
     STEP_PROMPTS.CITY,
     "Which city is this project in?",
+    "Could you tell me where this project is based?",
   ],
   [ChatStep.BUDGET]: [
     STEP_PROMPTS.BUDGET,
     "What budget range works for this project? A rough range is fine.",
+    "Could you share the budget range for this project?",
   ],
   [ChatStep.AREA]: [
     STEP_PROMPTS.AREA,
     "Roughly how much area are you looking to cover?",
+    "Could you tell me the total area you'd like to cover?",
   ],
   [ChatStep.ROOM_TYPE]: [
     STEP_PROMPTS.ROOM_TYPE,
     "Which space is this going in?",
+    "Which room or area are you planning this for?",
   ],
   [ChatStep.STYLE]: [
     STEP_PROMPTS.STYLE,
     "What style do you have in mind: minimal, modern, geometric, textured, or statement?",
+    "Do you have a style in mind: minimal, modern, geometric, textured, or statement?",
   ],
   [ChatStep.TIMELINE]: [
     STEP_PROMPTS.TIMELINE,
     "When are you hoping to start: This Month, 1-3 Months, 3-6 Months, or Just Exploring?",
+    "When are you planning to start: This Month, 1-3 Months, 3-6 Months, or Just Exploring?",
   ],
 };
 
