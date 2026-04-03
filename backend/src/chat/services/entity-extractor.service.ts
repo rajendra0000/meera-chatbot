@@ -8,10 +8,23 @@ import { normalizeLower, normalizeWhitespace } from "../utils/normalization.util
 import { FieldUpdate, IntentResult, MutableConversationField } from "../types/intent.types.js";
 
 const PRODUCT_KEYWORDS: Array<[string, string]> = [
+  ["breeze block", "Breeze Blocks"],
+  ["breeze blocks", "Breeze Blocks"],
   ["breeze", "Breeze Blocks"],
   ["jali", "Breeze Blocks"],
+  ["wall mural", "Wall Murals"],
+  ["wall murals", "Wall Murals"],
   ["mural", "Wall Murals"],
+  ["murals", "Wall Murals"],
+  ["brick cladding", "Brick Cladding"],
+  ["brick clad", "Brick Cladding"],
+  ["cladding", "Brick Cladding"],
   ["brick", "Brick Cladding"],
+  ["wall panels", "Wall Panels (H-UHPC)"],
+  ["wall panel", "Wall Panels (H-UHPC)"],
+  ["pannels", "Wall Panels (H-UHPC)"],
+  ["pannel", "Wall Panels (H-UHPC)"],
+  ["panels", "Wall Panels (H-UHPC)"],
   ["panel", "Wall Panels (H-UHPC)"],
 ];
 
@@ -63,6 +76,24 @@ function detectProductType(message: string) {
     if (lowered.includes(keyword)) return value;
   }
   return null;
+}
+
+function hasExplicitAreaContext(message: string) {
+  const lowered = normalizeLower(message);
+  return (
+    /\b\d+\s*(sqft|sq\.?ft|square feet|square foot|feet|ft)\b/.test(lowered) ||
+    [
+      "area",
+      "cover",
+      "coverage",
+      "covering",
+      "wall size",
+      "surface area",
+      "wall area",
+      "approx area",
+      "approximate area",
+    ].some((keyword) => lowered.includes(keyword))
+  );
 }
 
 function detectCity(message: string) {
@@ -179,8 +210,8 @@ export class EntityExtractorService {
       }
     }
 
-    if (currentStep === ChatStep.AREA || lowered.includes("sqft") || lowered.includes("area")) {
-      const area = extractArea(message);
+    if (currentStep === ChatStep.AREA || hasExplicitAreaContext(message)) {
+      const area = extractArea(message, { requireExplicitHint: currentStep !== ChatStep.AREA });
       if (area.area !== "Not captured" && area.area !== "0") {
         updates.push({
           field: "areaSqft",
@@ -231,8 +262,18 @@ export class EntityExtractorService {
   mergeUpdates(intent: IntentResult, deterministic: FieldUpdate[]) {
     const merged = [...intent.fieldUpdates];
     for (const update of deterministic) {
-      if (!merged.some((candidate) => candidate.field === update.field)) {
+      const existingIndex = merged.findIndex((candidate) => candidate.field === update.field);
+      if (existingIndex === -1) {
         merged.push(update);
+        continue;
+      }
+
+      const existing = merged[existingIndex];
+      if (
+        (existing.overwriteMode !== "overwrite" && update.overwriteMode === "overwrite") ||
+        (existing.source === "llm" && update.confidence > existing.confidence)
+      ) {
+        merged[existingIndex] = update;
       }
     }
     return merged;

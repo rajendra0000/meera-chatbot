@@ -41,6 +41,10 @@ export interface ProcessMessageOutput {
   triggerType: string | null;
   promptVersionId: number | null;
   promptVersionLabel: string | null;
+  replySource?: "deterministic" | "phrased";
+  validatorAccepted?: boolean;
+  validatorUsed?: boolean;
+  validatorReason?: string | null;
 }
 
 export interface ProcessChatInput {

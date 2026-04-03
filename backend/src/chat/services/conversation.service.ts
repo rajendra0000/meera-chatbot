@@ -14,11 +14,19 @@ import { HandoverService } from "./handover.service.js";
 import { IntentService } from "./intent.service.js";
 import { EntityExtractorService } from "./entity-extractor.service.js";
 import { StateMachineService } from "./state-machine.service.js";
-import { ProductService, resolveActiveCategoryLock } from "./product.service.js";
+import {
+  ProductService,
+  applyProductSwitchState,
+  isImageRequestMessage,
+  isMoreImagesRequestMessage,
+  mapProductTypeToCategory,
+  resolveActiveCategoryLock
+} from "./product.service.js";
 import { ResponseService } from "./response.service.js";
 import { ChannelRendererService } from "./channel-renderer.service.js";
 import { withRetries } from "../utils/retry.util.js";
 import { prepareLeadUpsert } from "../../services/lead.service.js";
+import { HANDOVER_LOCKED_MESSAGE } from "./handover.service.js";
 
 const CONVERSATION_WRITE_ATTEMPTS = 3;
 const NON_RECOMMEND_INTENTS = new Set<string>([
@@ -95,6 +103,95 @@ function shouldRefreshRecommendations(input: {
   );
 }
 
+function normalizeProductCategory(value: unknown) {
+  const text = typeof value === "string" ? value.trim() : "";
+  return mapProductTypeToCategory(text) ?? text;
+}
+
+function findLatestFieldValue(
+  updates: Array<{ field: string; value: string }>,
+  field: string
+) {
+  for (let index = updates.length - 1; index >= 0; index -= 1) {
+    const candidate = updates[index];
+    if (candidate.field === field) {
+      return candidate.value;
+    }
+  }
+
+  return null;
+}
+
+function detectRequestedProductSwitch(params: {
+  currentStep: ChatStep;
+  currentData: CollectedData;
+  updates: Array<{ field: string; value: string }>;
+}) {
+  if (params.currentStep === ChatStep.PRODUCT_TYPE) {
+    return null;
+  }
+
+  const currentCategory = normalizeProductCategory(params.currentData.productType);
+  const requestedProductType = findLatestFieldValue(params.updates, "productType");
+  const requestedCategory = normalizeProductCategory(requestedProductType);
+
+  if (!currentCategory || !requestedProductType || !requestedCategory) {
+    return null;
+  }
+
+  return requestedCategory !== currentCategory ? requestedProductType : null;
+}
+
+function hasRecentVisualContext(collectedData: CollectedData, lastRecommendedProductIds: string[]) {
+  return (
+    collectedData.pendingImageMode !== undefined ||
+    collectedData.hasShownProducts === true ||
+    (collectedData.shownProductIds?.length ?? 0) > 0 ||
+    lastRecommendedProductIds.length > 0
+  );
+}
+
+function deriveVisualControlMode(params: {
+  message: string;
+  intent: string;
+  collectedData: CollectedData;
+  lastRecommendedProductIds: string[];
+  requestedProductSwitch: string | null;
+}) {
+  if (params.collectedData.pendingImageMode) {
+    return "more_images" as const;
+  }
+
+  const explicitImageRequest =
+    isImageRequestMessage(params.message) || params.intent === "MORE_IMAGES";
+  const explicitShowProducts = params.intent === "SHOW_PRODUCTS";
+
+  if (!explicitImageRequest && !explicitShowProducts) {
+    return null;
+  }
+
+  if (params.requestedProductSwitch) {
+    return "show_products" as const;
+  }
+
+  if (explicitImageRequest && hasRecentVisualContext(params.collectedData, params.lastRecommendedProductIds)) {
+    return "more_images" as const;
+  }
+
+  if (explicitShowProducts) {
+    return "show_products" as const;
+  }
+
+  return "show_products" as const;
+}
+
+function isRestartRequest(message: string) {
+  const lowered = message.toLowerCase();
+  return ["reset", "restart", "start over", "start again", "new chat", "fresh start"].some((pattern) =>
+    lowered.includes(pattern)
+  );
+}
+
 export class ConversationService {
   private readonly contextService = new ContextService();
   private readonly safetyService = new SafetyService();
@@ -117,28 +214,6 @@ export class ConversationService {
 
   async processMessage(input: ProcessMessageInput): Promise<ProcessMessageOutput> {
     const promptBundle = safePromptBundle(await this.deps.getActivePromptBundle().catch(() => null));
-    const moreImages = await this.productService.handleMoreImagesFlow({
-      message: input.message,
-      currentStep: input.currentStep,
-      collectedData: input.collectedData,
-      lastRecommendedProductIds: input.lastRecommendedProductIds,
-    });
-    if (moreImages.handled) {
-      return {
-        reply: moreImages.reply,
-        nextStep: moreImages.nextStep,
-        collectedData: moreImages.collectedData as CollectedData,
-        recommendProducts: moreImages.recommendProducts,
-        isMoreImages: moreImages.isMoreImages,
-        isBrowseOnly: false,
-        quickReplies: moreImages.quickReplies,
-        handover: false,
-        triggerType: null,
-        promptVersionId: promptBundle.promptVersionId,
-        promptVersionLabel: promptBundle.promptVersionLabel,
-      };
-    }
-
     const safety = this.safetyService.inspect(input.message);
     const explicitHandover = this.handoverService.detectExplicitHandover(input.message);
     const intent = await this.intentService.classify({
@@ -156,7 +231,19 @@ export class ConversationService {
     );
     const mergedUpdates = this.entityExtractorService.mergeUpdates(intent, deterministicUpdates);
     const applied = this.entityExtractorService.applyUpdates(input.collectedData, mergedUpdates, input.currentStep);
-    const normalizedIntent =
+    const requestedProductSwitch = detectRequestedProductSwitch({
+      currentStep: input.currentStep,
+      currentData: input.collectedData,
+      updates: mergedUpdates,
+    });
+    const visualControlMode = deriveVisualControlMode({
+      message: input.message,
+      intent: intent.intent,
+      collectedData: input.collectedData,
+      lastRecommendedProductIds: input.lastRecommendedProductIds,
+      requestedProductSwitch,
+    });
+    let normalizedIntent =
       (intent.intent === "IRRELEVANT" || intent.intent === "SMALL_TALK") && applied.appliedUpdates.length > 0
         ? {
             ...intent,
@@ -164,7 +251,61 @@ export class ConversationService {
             confidence: Math.max(intent.confidence, 0.65),
           }
         : intent;
-    const nextData = { ...applied.collectedData };
+
+    if (!normalizedIntent.handover) {
+      if (requestedProductSwitch) {
+        normalizedIntent = {
+          ...normalizedIntent,
+          intent: "PRODUCT_SWITCH",
+          confidence: Math.max(normalizedIntent.confidence, 0.88),
+        };
+      } else if (visualControlMode === "more_images") {
+        normalizedIntent = {
+          ...normalizedIntent,
+          intent: "MORE_IMAGES",
+          confidence: Math.max(normalizedIntent.confidence, isMoreImagesRequestMessage(input.message) ? 0.9 : 0.82),
+        };
+      } else if (visualControlMode === "show_products") {
+        normalizedIntent = {
+          ...normalizedIntent,
+          intent: "SHOW_PRODUCTS",
+          confidence: Math.max(normalizedIntent.confidence, 0.82),
+        };
+      }
+    }
+
+    let nextData = { ...applied.collectedData };
+    if (requestedProductSwitch) {
+      nextData = applyProductSwitchState(nextData, requestedProductSwitch);
+    }
+
+    if (!normalizedIntent.handover && !requestedProductSwitch && normalizedIntent.intent === "MORE_IMAGES") {
+      const moreImages = await this.productService.handleMoreImagesFlow({
+        message: input.message,
+        currentStep: input.currentStep,
+        collectedData: nextData,
+        lastRecommendedProductIds: input.lastRecommendedProductIds,
+      });
+      if (moreImages.handled) {
+        return {
+          reply: moreImages.reply,
+          nextStep: moreImages.nextStep,
+          collectedData: moreImages.collectedData as CollectedData,
+          recommendProducts: moreImages.recommendProducts,
+          isMoreImages: moreImages.isMoreImages,
+          isBrowseOnly: false,
+          quickReplies: moreImages.quickReplies,
+          handover: false,
+          triggerType: null,
+          promptVersionId: promptBundle.promptVersionId,
+          promptVersionLabel: promptBundle.promptVersionLabel,
+          replySource: "deterministic",
+          validatorAccepted: false,
+          validatorUsed: false,
+          validatorReason: "more_images_control_turn",
+        };
+      }
+    }
 
     if (normalizedIntent.notes.includes("name_refusal")) {
       nextData.nameRetryCount = Number(nextData.nameRetryCount ?? 0) + 1;
@@ -213,11 +354,18 @@ export class ConversationService {
     let recommendProducts: ProcessMessageOutput["recommendProducts"] = [];
     let exhausted = false;
     const hasShownProducts = transition.collectedData.hasShownProducts === true;
+    const shouldRecommendOnSwitch =
+      normalizedIntent.intent === "PRODUCT_SWITCH" && visualControlMode === "show_products";
+    const allowBudgetBypass =
+      normalizedIntent.intent === "SHOW_PRODUCTS" ||
+      normalizedIntent.intent === "MORE_PRODUCTS" ||
+      shouldRecommendOnSwitch;
     const shouldRecommendProducts =
       !transition.handoverTrigger &&
       !NON_RECOMMEND_INTENTS.has(normalizedIntent.intent) &&
       (
         normalizedIntent.intent === "SHOW_PRODUCTS" ||
+        shouldRecommendOnSwitch ||
         normalizedIntent.intent === "MORE_PRODUCTS" ||
         shouldRefreshRecommendations({
           currentStep: input.currentStep,
@@ -230,8 +378,9 @@ export class ConversationService {
     if (shouldRecommendProducts) {
       const recommendation = await this.productService.buildRecommendation({
         collectedData: transition.collectedData,
-        limit: normalizedIntent.intent === "SHOW_PRODUCTS" ? 3 : 4,
+        limit: normalizedIntent.intent === "SHOW_PRODUCTS" || shouldRecommendOnSwitch ? 3 : 4,
         excludeIds: normalizedIntent.intent === "MORE_PRODUCTS" ? transition.collectedData.shownProductIds ?? [] : [],
+        ignoreBudgetGuard: allowBudgetBypass,
       });
       recommendProducts = recommendation.products;
       exhausted = recommendation.exhausted;
@@ -249,18 +398,12 @@ export class ConversationService {
     const nextStep = normalizedIntent.intent === "FAQ" ? input.currentStep : transition.nextStep;
     const quickReplies = nextStep === ChatStep.COMPLETED ? [] : ConversationHelper.getQuickReplies(nextStep);
     const plan = await this.responseService.buildPlan({
+      userMessage: input.message,
+      recentHistory: input.history,
       currentStep: input.currentStep,
       nextStep,
       intent: normalizedIntent,
       collectedData: transition.collectedData,
-      phrasingPayload: {
-        CURRENT_STEP: nextStep,
-        COLLECTED_DATA: transition.collectedData,
-        NORMALIZED_INPUT: {
-          messageType: normalizedIntent.intent === "FIELD_UPDATE" ? "STEP_ANSWER" : normalizedIntent.intent,
-          fieldUpdates: mergedUpdates,
-        },
-      },
       safetyFlags: safety.flags,
       faqResults,
       showroomMsg,
@@ -270,7 +413,7 @@ export class ConversationService {
       triggerType: transition.handoverTrigger,
       promptVersionId: promptBundle.promptVersionId,
       promptVersionLabel: promptBundle.promptVersionLabel,
-      budgetGuard: isBudgetGuard(transition.collectedData),
+      budgetGuard: isBudgetGuard(transition.collectedData) && !allowBudgetBypass,
       exhausted,
     });
 
@@ -286,6 +429,10 @@ export class ConversationService {
       triggerType: plan.triggerType,
       promptVersionId: plan.promptVersionId,
       promptVersionLabel: plan.promptVersionLabel,
+      replySource: plan.replySource,
+      validatorAccepted: plan.validatorAccepted,
+      validatorUsed: plan.validatorUsed,
+      validatorReason: plan.validatorReason,
     };
   }
 
@@ -343,6 +490,59 @@ export class ConversationService {
       const latestConversation = await this.conversationRepository.findById(conversationId);
       if (!latestConversation) {
         throw new Error(`Conversation ${conversationId} no longer exists.`);
+      }
+
+      if (latestConversation.status === ConversationStatus.HANDOVER && !isRestartRequest(incomingMessage)) {
+        await prisma.$transaction(async (tx) => {
+          const txMessageRepository = new MessageRepository(tx);
+
+          await txMessageRepository.createMessage({
+            conversationId: latestConversation.id,
+            role: MessageRole.USER,
+            content: incomingMessage,
+          });
+
+          await txMessageRepository.createMessage({
+            conversationId: latestConversation.id,
+            role: MessageRole.ASSISTANT,
+            content: HANDOVER_LOCKED_MESSAGE,
+          metadata: {
+            nextStep: ChatStep.COMPLETED,
+            recommendedProductIds: [],
+            handover: true,
+            triggerType: "Locked Handover",
+            promptVersionId: promptBundle.promptVersionId,
+            promptVersionLabel: promptBundle.promptVersionLabel,
+            replySource: "deterministic",
+            validatorAccepted: false,
+            validatorUsed: false,
+            validatorReason: "handover_locked",
+          },
+        });
+        });
+
+        const refreshedLead = await this.leadRepository.findByConversationId(latestConversation.id);
+        const payload = this.channelRenderer.renderResponse({
+          reply: HANDOVER_LOCKED_MESSAGE,
+          stepQuestion: null,
+          nextStep: ChatStep.COMPLETED,
+          quickReplies: [],
+          recommendProducts: [],
+          isMoreImages: false,
+          isBrowseOnly: false,
+          handover: true,
+          triggerType: "Locked Handover",
+          promptVersionId: promptBundle.promptVersionId,
+          promptVersionLabel: promptBundle.promptVersionLabel,
+        });
+
+        return {
+          conversationId: latestConversation.id,
+          ...payload,
+          nextStep: ChatStep.COMPLETED,
+          collectedData: (latestConversation.collectedData as CollectedData | null) ?? {},
+          lead: refreshedLead,
+        };
       }
 
       const [recentMessages, historicalMessages, existingLead] = await Promise.all([
@@ -431,6 +631,10 @@ export class ConversationService {
             triggerType: finalTriggerType,
             promptVersionId: result.promptVersionId,
             promptVersionLabel: result.promptVersionLabel,
+            replySource: result.replySource ?? "deterministic",
+            validatorAccepted: result.validatorAccepted ?? false,
+            validatorUsed: result.validatorUsed ?? false,
+            validatorReason: result.validatorReason ?? null,
           },
         });
       });

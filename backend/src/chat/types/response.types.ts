@@ -20,4 +20,16 @@ export interface ResponsePlan {
   triggerType: string | null;
   promptVersionId: number | null;
   promptVersionLabel: string | null;
+  replySource?: "deterministic" | "phrased";
+  validatorAccepted?: boolean;
+  validatorUsed?: boolean;
+  validatorReason?: string | null;
+}
+
+export interface ResponseValidationResult {
+  accepted: boolean;
+  reason: string | null;
+  usedLlmCheck: boolean;
+  source: "phrased" | "fallback_approved";
+  reply: string;
 }

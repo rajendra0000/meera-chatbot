@@ -10,7 +10,33 @@ export interface AreaExtractResult {
   mode: "known" | "vague" | "unknown";
 }
 
+type ExtractAreaOptions = {
+  requireExplicitHint?: boolean;
+};
+
+const EXPLICIT_AREA_HINTS = [
+  "area",
+  "cover",
+  "coverage",
+  "wall size",
+  "approx area",
+  "approximate area",
+  "square feet",
+  "sq ft",
+  "sqft",
+  "square foot",
+  "surface area",
+  "wall area",
+] as const;
+
+const AREA_RATE_PATTERN = /(?:\/|per\s+)(sqft|sq\.?ft|square feet|square foot|feet|ft)\b/;
+
 export class AreaHelper {
+  static hasExplicitAreaHint(value: string) {
+    const normalized = value.toLowerCase().trim();
+    return EXPLICIT_AREA_HINTS.some((hint) => normalized.includes(hint));
+  }
+
   /**
    * Extract a normalised area value from raw user input.
    *
@@ -19,10 +45,33 @@ export class AreaHelper {
    *   - score: 20 = exact sqft, 10 = keyword label, 5 = unknown
    *   - mode: "known" | "vague" | "unknown"
    */
-  static extract(value: string): AreaExtractResult {
+  static extract(value: string, options: ExtractAreaOptions = {}): AreaExtractResult {
     if (!value) return { area: "Not captured", score: 5, mode: "unknown" };
 
     const l = value.toLowerCase().trim();
+    const requireExplicitHint = options.requireExplicitHint === true;
+    const hasExplicitHint = AreaHelper.hasExplicitAreaHint(l);
+    const looksLikeRatePerArea = AREA_RATE_PATTERN.test(l);
+
+    if (requireExplicitHint && !hasExplicitHint) {
+      return { area: "Not captured", score: 5, mode: "unknown" };
+    }
+
+    if (looksLikeRatePerArea && !l.includes("cover") && !l.includes("area") && !l.includes("wall size")) {
+      return { area: "Not captured", score: 5, mode: "unknown" };
+    }
+
+    if (/\b(above|over|more than)\s*300\b/.test(l)) {
+      return { area: "300+", score: 20, mode: "known" };
+    }
+
+    if (/\b(under|below|less than)\s*100\b/.test(l)) {
+      return { area: "<100", score: 20, mode: "known" };
+    }
+
+    if (/\b100\s*-\s*300\b/.test(l)) {
+      return { area: "100-300", score: 20, mode: "known" };
+    }
 
     // 1. Exact sqft number first
     const numMatch = l.match(/(\d+)\s*(sqft|sq\.?ft|feet|ft|sq\b)?/);
@@ -37,7 +86,9 @@ export class AreaHelper {
 
     // 3. Bare number fallback
     const bareNum = parseInt(l.match(/\d+/)?.[0] ?? "0");
-    if (bareNum > 10) return { area: String(bareNum), score: 20, mode: "known" };
+    if (bareNum > 10 && (!requireExplicitHint || hasExplicitHint)) {
+      return { area: String(bareNum), score: 20, mode: "known" };
+    }
 
     return { area: "Not captured", score: 5, mode: "unknown" };
   }

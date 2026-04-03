@@ -6,6 +6,37 @@ import { RecommendationResult } from "../types/response.types.js";
 import { ConversationHelper } from "../../helpers/conversation.helper.js";
 import { resolveProductMedia } from "../../helpers/product-media.helper.js";
 
+const MORE_IMAGES_PATTERNS = [
+  "more images",
+  "more photos",
+  "more pictures",
+  "more image",
+  "more photo",
+] as const;
+
+const IMAGE_REQUEST_PATTERNS = [
+  ...MORE_IMAGES_PATTERNS,
+  "show me pictures",
+  "show pictures",
+  "show me photos",
+  "show photos",
+  "show me images",
+  "show images",
+  "show me some pictures",
+  "show me some photos",
+  "show some pictures",
+  "show some photos",
+  "show pics",
+  "show me pics",
+  "pictures of",
+  "photos of",
+  "images of",
+  "pic of",
+  "pics of",
+  "picture of",
+  "photo of",
+] as const;
+
 function hasUsableImage(imageUrl?: string) {
   return Boolean(imageUrl && !imageUrl.includes("placehold.co"));
 }
@@ -59,6 +90,32 @@ export function resolveActiveCategoryLock(collectedData: CollectedData) {
   return mapProductTypeToCategory(String(collectedData.productType ?? ""));
 }
 
+export function isImageRequestMessage(message: string) {
+  const lowered = message.toLowerCase();
+  return IMAGE_REQUEST_PATTERNS.some((pattern) => lowered.includes(pattern));
+}
+
+export function isMoreImagesRequestMessage(message: string) {
+  const lowered = message.toLowerCase();
+  return MORE_IMAGES_PATTERNS.some((pattern) => lowered.includes(pattern));
+}
+
+export function applyProductSwitchState(collectedData: CollectedData, productType: string): CollectedData {
+  const nextCategory = mapProductTypeToCategory(productType) ?? productType;
+  return {
+    ...collectedData,
+    productType,
+    activeCategoryLock: nextCategory,
+    hasShownProducts: false,
+    shownProductIds: [],
+    pendingImageMode: undefined,
+    pendingImageProductIds: undefined,
+    pendingImageCategory: undefined,
+    pendingImageProductName: undefined,
+    pendingImageRequestedProductId: undefined,
+  };
+}
+
 function normalizeProductMatchText(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -106,13 +163,23 @@ function hasExtraGalleryImages(product: Product) {
 export class ProductService {
   constructor(private readonly productRepository = new ProductRepository()) {}
 
-  async getRecommendedProducts(collectedData: CollectedData, limit = 4, excludeIds: string[] = []): Promise<Product[]> {
+  async getRecommendedProducts(
+    collectedData: CollectedData,
+    limit = 4,
+    excludeIds: string[] = [],
+    options: { ignoreBudgetGuard?: boolean } = {}
+  ): Promise<Product[]> {
     const allProducts = await this.productRepository.findAll();
     let filtered = allProducts.filter((product) => !excludeIds.includes(product.id));
 
-    const targetCategory = resolveActiveCategoryLock(collectedData);
+    let targetCategory = resolveActiveCategoryLock(collectedData);
     if (targetCategory) {
-      filtered = filtered.filter((product) => product.category.toLowerCase().includes(targetCategory.toLowerCase()));
+      const activeCategory = targetCategory;
+      filtered = filtered.filter((product) => product.category.toLowerCase().includes(activeCategory.toLowerCase()));
+    }
+
+    if (options.ignoreBudgetGuard && targetCategory === "Wall Panels (H-UHPC)") {
+      targetCategory = "";
     }
 
     const budget = String(collectedData.budget ?? "");
@@ -141,11 +208,13 @@ export class ProductService {
     collectedData: CollectedData;
     limit?: number;
     excludeIds?: string[];
+    ignoreBudgetGuard?: boolean;
   }): Promise<RecommendationResult> {
     const products = await this.getRecommendedProducts(
       params.collectedData,
       params.limit ?? 4,
-      params.excludeIds ?? []
+      params.excludeIds ?? [],
+      { ignoreBudgetGuard: params.ignoreBudgetGuard }
     );
     return {
       products,
@@ -323,28 +392,45 @@ export class ProductService {
       };
     }
 
-    const lowered = params.message.toLowerCase();
-    const asksForMoreImages = ["more images", "more photos", "more pictures", "more image", "more photo"].some((pattern) =>
-      lowered.includes(pattern)
-    );
+    const asksForImages = isImageRequestMessage(params.message);
 
-    if (!asksForMoreImages) {
+    if (!asksForImages) {
       return { handled: false };
     }
 
     if (recentImageCandidateIds.length === 0) {
+      return { handled: false };
+    }
+
+    const candidateProducts = await this.getProductsByIds(recentImageCandidateIds);
+    const matched = findMatchingRecentProduct(params.message, candidateProducts);
+    if (matched) {
+      if (!hasExtraGalleryImages(matched)) {
+        return {
+          handled: true,
+          reply: `I only have one verified photo of ${matched.name} right now. Want to compare it or see another option?`,
+          nextStep: params.currentStep,
+          collectedData: params.collectedData,
+          recommendProducts: [],
+          isMoreImages: false,
+          quickReplies,
+        };
+      }
+
       return {
         handled: true,
-        reply: "I haven't shown any products yet. Tell me what surface you're exploring and I'll show options first.",
+        reply: `Sure, here are more images of ${matched.name}.`,
         nextStep: params.currentStep,
-        collectedData: params.collectedData,
-        recommendProducts: [],
-        isMoreImages: false,
+        collectedData: {
+          ...params.collectedData,
+          shownProductIds: Array.from(new Set([...(params.collectedData.shownProductIds ?? []), matched.id])),
+        },
+        recommendProducts: [matched],
+        isMoreImages: true,
         quickReplies,
       };
     }
 
-    const candidateProducts = await this.getProductsByIds(recentImageCandidateIds);
     return {
       handled: true,
       reply: `Sure! Which product would you like more images of? Here are the ones I just showed: ${candidateProducts.slice(0, 3).map((product) => product.name).join(", ")}`,

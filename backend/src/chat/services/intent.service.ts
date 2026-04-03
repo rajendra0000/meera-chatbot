@@ -1,6 +1,6 @@
 import { ChatStep } from "@prisma/client";
 import { fallbackRouter } from "../../services/router.service.js";
-import { CALL1_SYSTEM_PROMPT, SYSTEM_PROMPT_CONTENT } from "../../services/prompt.service.js";
+import { CALL1_SYSTEM_PROMPT } from "../../services/prompt.service.js";
 import { CollectedData } from "../../types/conversation.types.js";
 import { ChatRuntimeDeps } from "../types/chat.types.js";
 import { ExtractableConversationField, IntentResult } from "../types/intent.types.js";
@@ -92,6 +92,48 @@ const PURCHASE_INTENT_PATTERNS = [
   "visit",
 ] as const;
 
+const PRODUCT_TYPE_PATTERNS: Array<[string, string]> = [
+  ["breeze block", "Breeze Blocks"],
+  ["breeze blocks", "Breeze Blocks"],
+  ["breeze", "Breeze Blocks"],
+  ["jali", "Breeze Blocks"],
+  ["wall mural", "Wall Murals"],
+  ["wall murals", "Wall Murals"],
+  ["mural", "Wall Murals"],
+  ["murals", "Wall Murals"],
+  ["brick cladding", "Brick Cladding"],
+  ["brick clad", "Brick Cladding"],
+  ["cladding", "Brick Cladding"],
+  ["brick", "Brick Cladding"],
+  ["wall panels", "Wall Panels (H-UHPC)"],
+  ["wall panel", "Wall Panels (H-UHPC)"],
+  ["pannels", "Wall Panels (H-UHPC)"],
+  ["pannel", "Wall Panels (H-UHPC)"],
+  ["panels", "Wall Panels (H-UHPC)"],
+  ["panel", "Wall Panels (H-UHPC)"],
+] as const;
+
+const IMAGE_REQUEST_PATTERNS = [
+  "show me pictures",
+  "show pictures",
+  "show me photos",
+  "show photos",
+  "show me images",
+  "show images",
+  "show me some pictures",
+  "show me some photos",
+  "show some pictures",
+  "show some photos",
+  "show pics",
+  "show me pics",
+  "pictures of",
+  "photos of",
+  "images of",
+  "pics of",
+  "picture of",
+  "photo of",
+] as const;
+
 function hasDomainSignal(message: string) {
   const lowered = normalizeLower(message);
   return DOMAIN_KEYWORDS.some((keyword) => lowered.includes(keyword));
@@ -109,6 +151,21 @@ function hasRelevantHint(message: string) {
 function detectPurchaseIntent(message: string) {
   const lowered = normalizeLower(message);
   return PURCHASE_INTENT_PATTERNS.some((pattern) => lowered.includes(pattern));
+}
+
+function detectProductType(message: string) {
+  const lowered = normalizeLower(message);
+  const match = PRODUCT_TYPE_PATTERNS.find(([pattern]) => lowered.includes(pattern));
+  return match?.[1] ?? null;
+}
+
+function normalizeProductType(value: string | null | undefined) {
+  return detectProductType(String(value ?? "")) ?? normalizeLower(String(value ?? ""));
+}
+
+function isImageRequest(message: string) {
+  const lowered = normalizeLower(message);
+  return IMAGE_REQUEST_PATTERNS.some((pattern) => lowered.includes(pattern));
 }
 
 function inferIntentConfidence(messageType: string | null, fieldUpdateCount: number, rawConfidence: unknown) {
@@ -147,6 +204,7 @@ function shouldMarkIrrelevant(message: string, result: IntentResult) {
 
   if (
     result.intent === "HANDOVER" ||
+    result.intent === "PRODUCT_SWITCH" ||
     result.intent === "PURCHASE_INTENT" ||
     result.intent === "RESET" ||
     result.intent === "SKIP" ||
@@ -228,7 +286,7 @@ function toIntentResult(partial: Partial<IntentResult>): IntentResult {
   };
 }
 
-function parseLegacyIntent(raw: unknown, currentStep: ChatStep): IntentResult | null {
+function parseLegacyIntent(raw: unknown, currentStep: ChatStep, currentData: CollectedData): IntentResult | null {
   if (!raw || typeof raw !== "object") {
     return null;
   }
@@ -284,11 +342,20 @@ function parseLegacyIntent(raw: unknown, currentStep: ChatStep): IntentResult | 
   }
 
   const browseOnly = switchIntent === "BROWSING";
+  const requestedProductType =
+    fieldUpdates.find((item) => item.field === "productType")?.value ??
+    (normalizedExtractedField === "productType" ? extractedValue : null);
+  const currentProductType = normalizeProductType(currentData.productType);
+  const isProductSwitch =
+    Boolean(requestedProductType) &&
+    Boolean(currentData.productType) &&
+    normalizeProductType(requestedProductType) !== currentProductType &&
+    currentStep !== ChatStep.PRODUCT_TYPE;
 
   switch (messageType) {
     case "STEP_ANSWER":
       return toIntentResult({
-        intent: currentStep === ChatStep.COMPLETED ? "FIELD_UPDATE" : "STEP_ANSWER",
+        intent: isProductSwitch ? "PRODUCT_SWITCH" : currentStep === ChatStep.COMPLETED ? "FIELD_UPDATE" : "STEP_ANSWER",
         confidence,
         fieldUpdates,
         browseOnly,
@@ -296,18 +363,18 @@ function parseLegacyIntent(raw: unknown, currentStep: ChatStep): IntentResult | 
     case "FAQ_QUESTION":
       return toIntentResult({ intent: "FAQ", confidence, fieldUpdates, browseOnly });
     case "SHOW_PRODUCTS":
-      return toIntentResult({ intent: "SHOW_PRODUCTS", confidence, fieldUpdates, browseOnly });
+      return toIntentResult({ intent: isProductSwitch ? "PRODUCT_SWITCH" : "SHOW_PRODUCTS", confidence, fieldUpdates, browseOnly });
     case "MORE_PRODUCTS":
       return toIntentResult({ intent: "MORE_PRODUCTS", confidence, fieldUpdates, browseOnly });
     case "MORE_IMAGES":
-      return toIntentResult({ intent: "MORE_IMAGES", confidence, fieldUpdates, browseOnly });
+      return toIntentResult({ intent: isProductSwitch ? "PRODUCT_SWITCH" : "MORE_IMAGES", confidence, fieldUpdates, browseOnly });
     case "HANDOVER_REQUEST":
       return toIntentResult({ intent: "HANDOVER", confidence, fieldUpdates, browseOnly, handover: true });
     case "GREETING":
       return toIntentResult({ intent: "GREETING", confidence, fieldUpdates, browseOnly });
     case "FREE_CHAT_REPLY":
       return toIntentResult({
-        intent: fieldUpdates.length > 0 ? "FIELD_UPDATE" : "SMALL_TALK",
+        intent: isProductSwitch ? "PRODUCT_SWITCH" : fieldUpdates.length > 0 ? "FIELD_UPDATE" : "SMALL_TALK",
         confidence,
         fieldUpdates,
         browseOnly,
@@ -329,6 +396,12 @@ function parseLegacyIntent(raw: unknown, currentStep: ChatStep): IntentResult | 
 function fallbackIntent(message: string, currentStep: ChatStep, currentData: CollectedData): IntentResult {
   const lowered = normalizeLower(message);
   const routed = fallbackRouter(message, currentStep);
+  const requestedProductType = detectProductType(message);
+  const isProductSwitch =
+    Boolean(requestedProductType) &&
+    Boolean(currentData.productType) &&
+    normalizeProductType(requestedProductType) !== normalizeProductType(currentData.productType) &&
+    currentStep !== ChatStep.PRODUCT_TYPE;
 
   if (currentStep === ChatStep.NAME && ["skip", "why", "kyu", "no", "nahi", "nhi", "ni"].some((pattern) => lowered.includes(pattern))) {
     if (Number(currentData.nameRetryCount ?? 0) >= 1) {
@@ -362,7 +435,18 @@ function fallbackIntent(message: string, currentStep: ChatStep, currentData: Col
     return toIntentResult({ intent: "PURCHASE_INTENT", confidence: 0.96, fallbackUsed: true });
   }
 
-  if (["more images", "more photos", "more pictures", "more image", "more photo"].some((pattern) => lowered.includes(pattern))) {
+  if (isProductSwitch) {
+    return toIntentResult({
+      intent: "PRODUCT_SWITCH",
+      confidence: 0.88,
+      fallbackUsed: true,
+      fieldUpdates: requestedProductType
+        ? [{ field: "productType", value: requestedProductType, confidence: 0.88, source: "deterministic", overwriteMode: "overwrite" }]
+        : [],
+    });
+  }
+
+  if (["more images", "more photos", "more pictures", "more image", "more photo"].some((pattern) => lowered.includes(pattern)) || isImageRequest(message)) {
     return toIntentResult({ intent: "MORE_IMAGES", confidence: 0.9, fallbackUsed: true });
   }
 
@@ -427,7 +511,7 @@ export class IntentService {
       if (!completion) {
         throw new Error("Call 1 returned null");
       }
-      const parsed = parseLegacyIntent(JSON.parse(completion), params.currentStep);
+      const parsed = parseLegacyIntent(JSON.parse(completion), params.currentStep, params.currentData);
       if (parsed) {
         normalizeRelevance(params.message, params.currentStep, parsed);
         parsed.llmFailures = llmFailures;
@@ -436,26 +520,6 @@ export class IntentService {
       throw new Error("Call 1 schema invalid");
     } catch (error) {
       llmFailures.push(error instanceof Error ? error.message : "call1_failed");
-    }
-
-    try {
-      const completion = await this.deps.groqJsonCompletion(
-        SYSTEM_PROMPT_CONTENT,
-        `User message: "${normalizeWhitespace(params.message)}"`
-      );
-      if (!completion) {
-        throw new Error("legacy fallback returned null");
-      }
-      const parsed = parseLegacyIntent(JSON.parse(completion), params.currentStep);
-      if (parsed) {
-        normalizeRelevance(params.message, params.currentStep, parsed);
-        parsed.fallbackUsed = true;
-        parsed.llmFailures = llmFailures;
-        return parsed;
-      }
-      throw new Error("legacy fallback schema invalid");
-    } catch (error) {
-      llmFailures.push(error instanceof Error ? error.message : "legacy_fallback_failed");
     }
 
     const deterministic = fallbackIntent(params.message, params.currentStep, params.currentData);

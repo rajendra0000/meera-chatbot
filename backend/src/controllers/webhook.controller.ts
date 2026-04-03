@@ -27,6 +27,45 @@ function verifySignature(rawBody: Buffer, signatureHeader: string | undefined): 
   }
 }
 
+function buildVisibleWhatsAppReply(result: {
+  replyText?: string;
+  recommend_products?: Array<{
+    name?: string;
+    image_url?: string;
+    thumbnail_url?: string;
+    product_url?: string;
+  }>;
+}) {
+  const parts: string[] = [];
+  const replyText = String(result.replyText ?? "").trim();
+  const recommendedProducts = Array.isArray(result.recommend_products)
+    ? result.recommend_products.filter((product) => typeof product?.name === "string" && product.name.trim().length > 0)
+    : [];
+
+  if (replyText) {
+    parts.push(replyText);
+  }
+
+  if (recommendedProducts.length > 0) {
+    const productLines = recommendedProducts.slice(0, 3).map((product, index) => {
+      const mediaLink = product.image_url ?? product.thumbnail_url ?? product.product_url ?? "";
+      return mediaLink
+        ? `${index + 1}. ${product.name}\nPhoto: ${mediaLink}`
+        : `${index + 1}. ${product.name}`;
+    });
+
+    parts.push(
+      [
+        "Here are the matched catalog options:",
+        productLines.join("\n"),
+        "Reply with the product name and I'll share more images.",
+      ].join("\n")
+    );
+  }
+
+  return parts.filter((part) => part.trim()).join("\n\n");
+}
+
 export async function handleGupshupWebhook(req: Request, res: Response): Promise<void> {
   try {
     // Signature check — uses rawBody attached by express.raw() or express.json()
@@ -61,8 +100,10 @@ export async function handleGupshupWebhook(req: Request, res: Response): Promise
       contactId
     });
 
-    if (contactId !== "unknown" && result.replyText) {
-      await sendGupshupText(contactId, result.replyText);
+    const visibleReply = buildVisibleWhatsAppReply(result);
+
+    if (contactId !== "unknown" && visibleReply) {
+      await sendGupshupText(contactId, visibleReply);
     }
 
     res.json({ ok: true, result });
@@ -71,4 +112,3 @@ export async function handleGupshupWebhook(req: Request, res: Response): Promise
     res.status(500).json({ error: "Internal server error" });
   }
 }
-

@@ -1,6 +1,7 @@
 export const CHAT_INTENTS = [
   "STEP_ANSWER",
   "FAQ",
+  "PRODUCT_SWITCH",
   "SHOW_PRODUCTS",
   "MORE_PRODUCTS",
   "MORE_IMAGES",

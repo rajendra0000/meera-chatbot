@@ -33,6 +33,7 @@ export function fallbackRouter(message: string, _step: string): RouterResult {
   const showKeywords = [
     "dikao", "dikaye", "dikhao", "dikha", "show me",
     "show", "pehle dekh", "examples", "options", "pieces",
+    "pictures", "picture", "photos", "photo", "images", "image", "pics", "pic",
     "kuch dekh", "dikha do"
   ];
   if (showKeywords.some((k) => lower.includes(k))) {

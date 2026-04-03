@@ -5,30 +5,22 @@ import { ChatRuntimeDeps } from "../types/chat.types.js";
 import { ResponsePlan } from "../types/response.types.js";
 import { IntentResult } from "../types/intent.types.js";
 import { TEAM_HANDOVER_MESSAGE } from "./handover.service.js";
-import { normalizeWhitespace } from "../utils/normalization.util.js";
 import { resolveActiveCategoryLock } from "./product.service.js";
+import { ResponseValidatorService, enforceReplyShape } from "./response-validator.service.js";
 
-const EMOJI_PATTERN = /\p{Extended_Pictographic}/gu;
-const RECAP_PATTERNS = [
-  "it seems",
-  "it sounds like",
-  "looks like",
-  "so you're",
-  "so you are",
-  "you're looking",
-  "you are looking",
-] as const;
+const CALL2_REWRITE_PROMPT =
+  "Rewrite only the backend-approved WhatsApp reply as Meera. Keep the meaning, business logic, and question intent exactly the same. Do not add facts, do not change the ask, and do not make decisions. Use 1-3 short lines, warm human tone, and light WhatsApp phrasing. Avoid robotic lines like 'That helps', 'Sounds good', or 'Based on your preferences'. Return plain text only.";
 
 const ACKNOWLEDGMENT_OPTIONS = {
   name: [
     "Nice to meet you",
-    "Lovely to meet you",
     "Good to know",
+    "Perfect",
   ],
   budget: [
     "Got it",
-    "That helps",
-    "Good to know",
+    "Perfect",
+    "Okay",
   ],
   area: [
     "Perfect",
@@ -37,100 +29,38 @@ const ACKNOWLEDGMENT_OPTIONS = {
   ],
   room: [
     "Nice",
-    "Sounds good",
+    "Perfect",
     "Got it",
   ],
   style: [
     "Nice choice",
-    "That'll look good",
-    "Good direction",
+    "Perfect",
+    "Nice",
   ],
   completed: [
     "Perfect",
     "Nice",
-    "Looks good",
+    "That works",
   ],
   generic: [
     "Got it",
-    "Makes sense",
-    "Sounds good",
+    "Okay",
+    "That works",
   ],
 } as const;
 
 const REDIRECT_OPTIONS = {
   collecting: [
-    "Happy to help.",
     "Sure.",
+    "Okay.",
     "Of course.",
   ],
   completed: [
+    "Sure.",
+    "Okay.",
     "I can help with that.",
-    "Sure, I can help.",
-    "Let's do that.",
   ],
 } as const;
-
-function sanitizeReply(text: string) {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, "$1")
-    .replace(/__(.*?)__/g, "$1")
-    .replace(/\*(.*?)\*/g, "$1")
-    .replace(/`([^`]+)`/g, "$1")
-    .trim();
-}
-
-function hasRecapOpening(text: string) {
-  const normalized = normalizeWhitespace(text).toLowerCase();
-  return RECAP_PATTERNS.some((pattern) => normalized.startsWith(pattern));
-}
-
-function removeRecapOpening(text: string) {
-  const normalized = text.trim();
-  if (!hasRecapOpening(normalized)) {
-    return normalized;
-  }
-
-  const punctuationIndex = normalized.search(/[.!?]/);
-  if (punctuationIndex >= 0 && punctuationIndex < normalized.length - 1) {
-    return normalized.slice(punctuationIndex + 1).trim();
-  }
-
-  return normalized;
-}
-
-function isAcceptablePhrasedReply(text: string) {
-  const trimmed = removeRecapOpening(text.trim());
-  if (!trimmed) return false;
-
-  const lineCount = trimmed.split(/\r?\n+/).filter((line) => line.trim()).length;
-  const questionCount = (trimmed.match(/\?/g) ?? []).length;
-  const emojiCount = (trimmed.match(EMOJI_PATTERN) ?? []).length;
-
-  return lineCount <= 3 && questionCount <= 1 && emojiCount <= 1 && !hasRecapOpening(trimmed);
-}
-
-function enforceReplyShape(text: string) {
-  const cleaned = removeRecapOpening(sanitizeReply(text));
-  if (!cleaned) return cleaned;
-
-  const lines = cleaned
-    .split(/\r?\n+/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .slice(0, 3);
-
-  let reply = lines.join("\n");
-  const firstQuestionIndex = reply.indexOf("?");
-  if (firstQuestionIndex >= 0) {
-    reply =
-      reply.slice(0, firstQuestionIndex + 1) +
-      reply
-        .slice(firstQuestionIndex + 1)
-        .replace(/\?/g, ".");
-  }
-
-  return reply.trim();
-}
 
 function splitShowroomMessage(showroomMsg: string | null) {
   const lines = showroomMsg
@@ -179,6 +109,24 @@ function rotateCopy(
 function getCurrentCategoryLabel(collectedData: CollectedData) {
   const category = resolveActiveCategoryLock(collectedData);
   return category ? category.replace(/\s*\(.*?\)\s*/g, "").trim() : "this category";
+}
+
+function getToneContext(collectedData: CollectedData) {
+  const context: Record<string, string> = {};
+  const addField = (key: string, value: unknown) => {
+    if (typeof value !== "string" || !value.trim()) {
+      return;
+    }
+    context[key] = value.trim();
+  };
+
+  addField("productType", collectedData.productType);
+  addField("city", collectedData.city);
+  addField("roomType", collectedData.roomType);
+  addField("style", collectedData.style);
+  addField("timeline", collectedData.timeline);
+
+  return context;
 }
 
 function buildInvalidReply(currentStep: ChatStep, notes: string[]) {
@@ -241,14 +189,19 @@ function buildStepAcknowledgment(currentStep: ChatStep, nextStep: ChatStep, coll
 }
 
 export class ResponseService {
-  constructor(private readonly deps: ChatRuntimeDeps) {}
+  private readonly validatorService: ResponseValidatorService;
+
+  constructor(private readonly deps: ChatRuntimeDeps) {
+    this.validatorService = new ResponseValidatorService(deps);
+  }
 
   async buildPlan(params: {
+    userMessage: string;
+    recentHistory: string[];
     currentStep: ChatStep;
     nextStep: ChatStep;
     intent: IntentResult;
     collectedData: CollectedData;
-    phrasingPayload?: Record<string, unknown>;
     safetyFlags?: string[];
     faqResults: Array<{ answer: string }>;
     showroomMsg: string | null;
@@ -266,20 +219,50 @@ export class ResponseService {
     const categoryLabel = getCurrentCategoryLabel(params.collectedData);
     const nextQuestion = params.nextStep === ChatStep.COMPLETED ? null : ConversationHelper.getStepQuestion(params.nextStep);
     const showroomParts = splitShowroomMessage(params.showroomMsg);
+    const isControlTurn =
+      params.handover ||
+      params.intent.intent === "PRODUCT_SWITCH" ||
+      params.intent.intent === "SHOW_PRODUCTS" ||
+      params.intent.intent === "MORE_IMAGES";
+    let approvedReply = "";
     let reply = "";
     let allowPhrasing = false;
+    let replySource: ResponsePlan["replySource"] = "deterministic";
+    let validatorAccepted = false;
+    let validatorUsed = false;
+    let validatorReason: string | null = isControlTurn ? "call2_skipped_control_turn" : null;
 
     if (params.handover) {
-      reply = TEAM_HANDOVER_MESSAGE;
+      approvedReply = TEAM_HANDOVER_MESSAGE;
+    } else if (params.intent.intent === "PRODUCT_SWITCH") {
+      if (params.budgetGuard) {
+        approvedReply = "Wall panels usually start around Rs 400+/sqft.\nWant me to show Breeze Blocks or Brick Cladding instead?";
+      } else {
+        approvedReply = params.recommendProducts.length > 0
+          ? `Sure, we can switch to ${categoryLabel}. Here are a few options.`
+          : `Sure, we can switch to ${categoryLabel}.`;
+      }
+    } else if (params.intent.intent === "SHOW_PRODUCTS") {
+      if (params.recommendProducts.length > 0) {
+        approvedReply = `Sure, here are a few ${categoryLabel.toLowerCase()} options.`;
+      } else if (params.exhausted) {
+        approvedReply = `I don't have more verified ${categoryLabel.toLowerCase()} options right now.`;
+      } else {
+        approvedReply = `Sure, I can show you ${categoryLabel.toLowerCase()} options.`;
+      }
+    } else if (params.intent.intent === "MORE_IMAGES") {
+      approvedReply = params.recommendProducts.length > 0
+        ? "Sure, here are more images."
+        : "Sure, tell me which option you'd like to see more images of.";
     } else if (params.safetyFlags?.includes("quote_request")) {
-      reply = "I can share a rough range here, but not a final quote. If you'd like, I can connect you with our team for an exact quote.";
+      approvedReply = "I can share a rough range here, but not a final quote. If you'd like, I can connect you with our team for an exact quote.";
     } else if (params.safetyFlags?.includes("discount_request")) {
-      reply = "I can't confirm discounts here, but I can help you with the right options or connect you with our team.";
+      approvedReply = "I can't confirm discounts here, but I can help you with the right options or connect you with our team.";
     } else if (params.intent.intent === "PURCHASE_INTENT") {
       if (!city) {
-        reply = "Sure. Which city should I check for you?";
+        approvedReply = "Sure. Which city should I check for you?";
       } else if (params.showroomMsg) {
-        reply = [
+        approvedReply = [
           `Yes, we have a showroom in ${city}.`,
           showroomParts.details,
           "Want the contact or should I connect you with our team?",
@@ -287,39 +270,39 @@ export class ResponseService {
           .filter((item) => item && item.trim())
           .join("\n");
       } else {
-        reply = `I can help you take this forward in ${city}.\nWant me to connect you with our team?`;
+        approvedReply = `I can help you take this forward in ${city}.\nWant me to connect you with our team?`;
       }
     } else if (params.intent.intent === "SECURITY_ATTACK") {
-      reply = "I can help with options, design guidance, or showroom details.";
+      approvedReply = "I can help with options, design guidance, or showroom details.";
     } else if (params.intent.intent === "EMPTY") {
-      reply = "I didn't catch that. Could you send it once more?";
+      approvedReply = "I didn't catch that. Could you send it once more?";
     } else if (params.intent.intent === "SPAM") {
-      reply = "I couldn't make that out clearly. Could you send it once in simple words?";
+      approvedReply = "I couldn't make that out clearly. Could you send it once in simple words?";
     } else if (params.intent.intent === "RESET") {
-      reply = params.currentStep === ChatStep.COMPLETED
+      approvedReply = params.currentStep === ChatStep.COMPLETED
         ? "We can update any specific detail here, or start a new chat if you'd like."
         : "Of course. We can start fresh from here. Tell me the detail you'd like to change.";
     } else if (params.intent.intent === "FAQ" && faqAnswer) {
-      reply = params.currentStep === ChatStep.COMPLETED
+      approvedReply = params.currentStep === ChatStep.COMPLETED
         ? `${faqAnswer}\n\nWant help compare options or check a showroom?`
         : buildAtomicReply(faqAnswer, params.showroomMsg, ConversationHelper.getStepQuestion(params.currentStep));
       allowPhrasing = !params.showroomMsg;
     } else if (params.intent.intent === "FAQ") {
-      reply = buildRedirectReply(params.currentStep, params.collectedData.hasShownProducts === true, params.collectedData);
+      approvedReply = buildRedirectReply(params.currentStep, params.collectedData.hasShownProducts === true, params.collectedData);
     } else if (params.intent.intent === "IRRELEVANT" || params.intent.intent === "SMALL_TALK") {
-      reply = buildRedirectReply(params.currentStep, params.collectedData.hasShownProducts === true, params.collectedData);
+      approvedReply = buildRedirectReply(params.currentStep, params.collectedData.hasShownProducts === true, params.collectedData);
     } else if (params.budgetGuard) {
-      reply = "Wall panels usually start around Rs 400+/sqft.\nWant me to show Breeze Blocks or Brick Cladding instead?";
+      approvedReply = "Wall panels usually start around Rs 400+/sqft.\nWant me to show Breeze Blocks or Brick Cladding instead?";
     } else if (params.intent.intent === "MORE_PRODUCTS" && params.exhausted) {
-      reply = `I've shown all my ${categoryLabel.toLowerCase()} options for now.\nWant me to compare these or explore another category?`;
+      approvedReply = `I've shown all my ${categoryLabel.toLowerCase()} options for now.\nWant me to compare these or explore another category?`;
     } else if (params.nextStep === ChatStep.COMPLETED && params.recommendProducts.length > 0) {
-      reply = "Nice, I picked a few good options for you.\nTap one and I'll help you compare.";
+      approvedReply = "Nice, I picked a few good options for you.\nTap one and I'll help you compare.";
     } else if (params.currentStep === ChatStep.COMPLETED && params.collectedData.hasShownProducts && params.recommendProducts.length === 0) {
-      reply = "Want me to compare these, share more images, or help with the showroom?";
+      approvedReply = "Want me to compare these, share more images, or help with the showroom?";
     } else if (params.intent.intent === "INVALID") {
-      reply = buildInvalidReply(params.currentStep, params.intent.notes);
+      approvedReply = buildInvalidReply(params.currentStep, params.intent.notes);
     } else {
-      reply = buildAtomicReply(
+      approvedReply = buildAtomicReply(
         buildStepAcknowledgment(params.currentStep, params.nextStep, params.collectedData),
         params.showroomMsg,
         nextQuestion
@@ -328,7 +311,7 @@ export class ResponseService {
     }
 
     if (
-      !params.handover &&
+      !isControlTurn &&
       !params.showroomMsg &&
       !params.budgetGuard &&
       params.intent.intent !== "INVALID"
@@ -336,21 +319,47 @@ export class ResponseService {
       allowPhrasing = true;
     }
 
+    reply = approvedReply;
+
     if (allowPhrasing) {
       try {
         const phrasingPayload = {
-          approvedReply: reply,
-          ...(params.phrasingPayload ?? {}),
+          approvedReply,
+          userMessage: params.userMessage,
+          currentStep: params.nextStep,
+          intent: params.intent.intent,
+          recentHistory: params.recentHistory.slice(-6),
+          toneContext: getToneContext(params.collectedData),
         };
         const phrased = await this.deps.groqTextCompletion(
-          "Rewrite the approved assistant reply as Meera. Keep it warm, concise, human, and conversational. Use 1-3 short sentences, ask at most one follow-up question, do not add facts, and return plain text only.",
+          CALL2_REWRITE_PROMPT,
           JSON.stringify(phrasingPayload)
         );
-        if (phrased && isAcceptablePhrasedReply(phrased)) {
-          reply = enforceReplyShape(normalizeWhitespace(phrased));
+        if (phrased && phrased.trim()) {
+          const validation = await this.validatorService.validatePolishedReply({
+            userMessage: params.userMessage,
+            recentHistory: params.recentHistory,
+            intent: params.intent,
+            currentStep: params.nextStep,
+            approvedReply,
+            candidateReply: phrased,
+            recommendProducts: params.recommendProducts,
+            handover: params.handover,
+            showroomMsg: params.showroomMsg,
+            collectedData: params.collectedData,
+          });
+          validatorUsed = true;
+          validatorAccepted = validation.accepted;
+          validatorReason = validation.reason;
+          reply = validation.reply;
+          if (validation.accepted && validation.source === "phrased") {
+            replySource = "phrased";
+          }
+        } else {
+          validatorReason = "call2_empty";
         }
       } catch {
-        // Use deterministic reply
+        validatorReason = "call2_failed";
       }
     }
 
@@ -366,6 +375,10 @@ export class ResponseService {
       triggerType: params.triggerType,
       promptVersionId: params.promptVersionId,
       promptVersionLabel: params.promptVersionLabel,
+      replySource,
+      validatorAccepted,
+      validatorUsed,
+      validatorReason,
     };
   }
 }

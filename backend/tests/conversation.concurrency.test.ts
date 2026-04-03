@@ -326,3 +326,75 @@ test("processChat retries on Prisma P2028 with a fresh conversation snapshot", a
   assert.equal(conversationState.version, 2);
   assert.equal(committedMessages.length, 2);
 });
+
+test("processChat keeps a conversation locked after handover and does not re-enter collection flow", async () => {
+  const service = createService();
+
+  const conversationState: ConversationState = {
+    id: "conv-handover",
+    channel: ConversationChannel.WEB,
+    contactId: null,
+    customerName: "Aman",
+    step: ChatStep.COMPLETED,
+    status: ConversationStatus.HANDOVER,
+    version: 3,
+    collectedData: {
+      name: "Aman",
+      productType: "Wall Panels (H-UHPC)",
+      city: "Delhi",
+      budget: "Flexible",
+      areaSqft: "250",
+      roomType: "Living Room",
+    },
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const stagedMessages: Array<{ role: MessageRole; content: string }> = [];
+
+  stubMethod(prisma, "$transaction", (async <T>(callback: (tx: object) => Promise<T>) => {
+    return callback({});
+  }) as typeof prisma.$transaction);
+
+  stubMethod(ConversationRepository.prototype, "findById", (async () => ({
+    ...conversationState,
+    collectedData: { ...(conversationState.collectedData as Record<string, unknown>) },
+  })) as ConversationRepository["findById"]);
+
+  stubMethod(MessageRepository.prototype, "createMessage", (async (params: {
+    conversationId: string;
+    role: MessageRole;
+    content: string;
+  }) => {
+    stagedMessages.push({ role: params.role, content: params.content });
+    return {
+      id: `created-${stagedMessages.length}`,
+      conversationId: params.conversationId,
+      role: params.role,
+      content: params.content,
+      metadata: null,
+      createdAt: new Date(),
+    };
+  }) as MessageRepository["createMessage"]);
+
+  stubMethod(LeadRepository.prototype, "findByConversationId", (async () => null) as LeadRepository["findByConversationId"]);
+
+  (service as ConversationService & {
+    processMessage: ConversationService["processMessage"];
+  }).processMessage = (async () => {
+    throw new Error("processMessage should not run once the conversation is locked for handover");
+  }) as ConversationService["processMessage"];
+
+  const result = await service.processChat({
+    conversationId: conversationState.id,
+    message: "Okay please do that",
+  });
+
+  assert.equal(result.nextStep, ChatStep.COMPLETED);
+  assert.equal(result.handover, true);
+  assert.match(result.replyText, /take it from here/i);
+  assert.deepEqual(stagedMessages, [
+    { role: MessageRole.USER, content: "Okay please do that" },
+    { role: MessageRole.ASSISTANT, content: "Kabir from our team will take it from here." },
+  ]);
+});
