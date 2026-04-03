@@ -2,6 +2,13 @@ import { ChatStep, ConversationChannel } from "@prisma/client";
 import { Product } from "../../types/chat.types.js";
 import { CollectedData } from "../../types/conversation.types.js";
 
+export interface ToneConfig {
+  preferredAcknowledgements?: string[];
+  toneStyle?: string;
+  emojiStyle?: string;
+  customInstructions?: string;
+}
+
 export interface ChatRuntimeDeps {
   groqJsonCompletion: (system: string, user: string) => Promise<string | null>;
   groqTextCompletion: (system: string, user: string) => Promise<string | null>;
@@ -11,6 +18,7 @@ export interface ChatRuntimeDeps {
     combined: string;
     promptVersionId: number | null;
     promptVersionLabel: string | null;
+    toneConfig?: ToneConfig | null;
   } | null>;
   searchFaqByKeywords: (userMessage: string) => Promise<Array<{
     id?: string;

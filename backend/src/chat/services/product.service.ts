@@ -3,7 +3,6 @@ import { ProductRepository } from "../repositories/product.repository.js";
 import { Product } from "../../types/chat.types.js";
 import { CollectedData } from "../../types/conversation.types.js";
 import { RecommendationResult } from "../types/response.types.js";
-import { ConversationHelper } from "../../helpers/conversation.helper.js";
 import { resolveProductMedia } from "../../helpers/product-media.helper.js";
 
 const MORE_IMAGES_PATTERNS = [
@@ -245,7 +244,7 @@ export class ProductService {
       ? params.lastRecommendedProductIds
       : (params.collectedData.shownProductIds ?? []).slice(-4);
 
-    const quickReplies = params.currentStep === ChatStep.COMPLETED ? [] : ConversationHelper.getQuickReplies(params.currentStep);
+    const quickReplies: string[] = [];
 
     if (params.collectedData.pendingImageMode === "awaiting_category_confirmation") {
       const pendingProductId = String(params.collectedData.pendingImageRequestedProductId ?? "");
@@ -277,7 +276,7 @@ export class ProductService {
 
           return {
             handled: true,
-            reply: `Sure, here are more images of ${pendingProduct.name}.`,
+            reply: `Here are more images of ${pendingProduct.name}.`,
             nextStep: params.currentStep,
             collectedData: {
               ...clearedData,
@@ -292,7 +291,7 @@ export class ProductService {
         if (detectContinueCurrentCategoryResponse(params.message)) {
           return {
             handled: true,
-            reply: `No problem - we'll stay with ${displayCategoryName(currentCategory)}.`,
+            reply: `We'll stay with ${displayCategoryName(currentCategory)}.`,
             nextStep: params.currentStep,
             collectedData: clearedData,
             recommendProducts: [],
@@ -378,7 +377,7 @@ export class ProductService {
 
       return {
         handled: true,
-        reply: `Sure, here are more images of ${matched.name}.`,
+        reply: `Here are more images of ${matched.name}.`,
         nextStep: params.currentStep,
         collectedData: {
           ...params.collectedData,
@@ -419,7 +418,7 @@ export class ProductService {
 
       return {
         handled: true,
-        reply: `Sure, here are more images of ${matched.name}.`,
+        reply: `Here are more images of ${matched.name}.`,
         nextStep: params.currentStep,
         collectedData: {
           ...params.collectedData,
@@ -433,7 +432,7 @@ export class ProductService {
 
     return {
       handled: true,
-      reply: `Sure! Which product would you like more images of? Here are the ones I just showed: ${candidateProducts.slice(0, 3).map((product) => product.name).join(", ")}`,
+      reply: `Which product do you want more images of? I just showed ${candidateProducts.slice(0, 3).map((product) => product.name).join(", ")}.`,
       nextStep: params.currentStep,
       collectedData: {
         ...params.collectedData,

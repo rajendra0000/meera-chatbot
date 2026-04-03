@@ -27,6 +27,7 @@ import { ChannelRendererService } from "./channel-renderer.service.js";
 import { withRetries } from "../utils/retry.util.js";
 import { prepareLeadUpsert } from "../../services/lead.service.js";
 import { HANDOVER_LOCKED_MESSAGE } from "./handover.service.js";
+import { canonicalizeBudget } from "../utils/budget.util.js";
 
 const CONVERSATION_WRITE_ATTEMPTS = 3;
 const NON_RECOMMEND_INTENTS = new Set<string>([
@@ -48,6 +49,7 @@ function safePromptBundle(bundle: Awaited<ReturnType<ChatRuntimeDeps["getActiveP
     combined: "",
     promptVersionId: null,
     promptVersionLabel: "Default Prompt",
+    toneConfig: null,
   };
 }
 
@@ -67,7 +69,8 @@ function dedupeReplyParagraphs(reply: string) {
 function isBudgetGuard(collectedData: CollectedData) {
   const budget = String(collectedData.budget ?? "");
   const category = resolveActiveCategoryLock(collectedData);
-  return category === "Wall Panels (H-UHPC)" && Boolean(budget) && budget !== "Ã¢â€šÂ¹400+/sqft" && budget !== "â‚¹400+/sqft" && budget !== "Flexible";
+  const normalizedBudget = canonicalizeBudget(budget, false);
+  return category === "Wall Panels (H-UHPC)" && Boolean(budget) && normalizedBudget !== "₹400+/sqft" && normalizedBudget !== "Flexible";
 }
 
 function normalizeCityLookupValue(value: string) {
@@ -231,6 +234,7 @@ export class ConversationService {
     );
     const mergedUpdates = this.entityExtractorService.mergeUpdates(intent, deterministicUpdates);
     const applied = this.entityExtractorService.applyUpdates(input.collectedData, mergedUpdates, input.currentStep);
+    const hasAcceptedFieldInput = applied.appliedUpdates.length > 0;
     const requestedProductSwitch = detectRequestedProductSwitch({
       currentStep: input.currentStep,
       currentData: input.collectedData,
@@ -244,7 +248,7 @@ export class ConversationService {
       requestedProductSwitch,
     });
     let normalizedIntent =
-      (intent.intent === "IRRELEVANT" || intent.intent === "SMALL_TALK") && applied.appliedUpdates.length > 0
+      hasAcceptedFieldInput && ["IRRELEVANT", "SMALL_TALK", "INVALID", "EMPTY", "SPAM"].includes(intent.intent)
         ? {
             ...intent,
             intent: input.currentStep === ChatStep.COMPLETED ? "FIELD_UPDATE" as const : "STEP_ANSWER" as const,
@@ -346,7 +350,7 @@ export class ConversationService {
           normalizedCity.includes(normalizeCityLookupValue(showroom.city))
         );
         if (match) {
-          showroomMsg = `Great news - we have a showroom near you.\n${match.name} - ${match.address}\nContact: ${match.contact ?? "available on request"}`;
+          showroomMsg = `We have a showroom near you.\n${match.name} - ${match.address}\nContact: ${match.contact ?? "available on request"}`;
         }
       }
     }
@@ -395,13 +399,14 @@ export class ConversationService {
       }
     }
 
-    const nextStep = normalizedIntent.intent === "FAQ" ? input.currentStep : transition.nextStep;
+    const nextStep = transition.nextStep;
     const quickReplies = nextStep === ChatStep.COMPLETED ? [] : ConversationHelper.getQuickReplies(nextStep);
     const plan = await this.responseService.buildPlan({
       userMessage: input.message,
       recentHistory: input.history,
       currentStep: input.currentStep,
       nextStep,
+      latestCapturedField: applied.appliedUpdates[applied.appliedUpdates.length - 1]?.field ?? null,
       intent: normalizedIntent,
       collectedData: transition.collectedData,
       safetyFlags: safety.flags,
@@ -415,6 +420,7 @@ export class ConversationService {
       promptVersionLabel: promptBundle.promptVersionLabel,
       budgetGuard: isBudgetGuard(transition.collectedData) && !allowBudgetBypass,
       exhausted,
+      toneConfig: promptBundle.toneConfig ?? null,
     });
 
     return {
@@ -452,7 +458,7 @@ export class ConversationService {
     }
 
     if (!incomingMessage || input.bootstrap) {
-      const greeting = "Hey, I'm Meera from Hey Concrete 😊\nWhat should I call you?";
+      const greeting = "I am Meera from Hey Concrete.\nWhat should I call you?";
       await this.messageRepository.createMessage({
         conversationId: conversation.id,
         role: MessageRole.ASSISTANT,

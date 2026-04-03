@@ -1,6 +1,6 @@
 import { ChatStep } from "@prisma/client";
 import { QUICK_REPLIES } from "../../constants/steps.constants.js";
-import { STYLE_INPUT_HINTS, TIMELINE_INPUT_HINTS, isVagueConversationValue, normalizeTimelineValue } from "../../constants/conversation.constants.js";
+import { STYLE_INPUT_HINTS, TIMELINE_INPUT_HINTS, isVagueConversationValue, normalizeConversationValue, normalizeTimelineValue } from "../../constants/conversation.constants.js";
 import { CollectedData } from "../../types/conversation.types.js";
 import { canonicalizeBudget } from "../utils/budget.util.js";
 import { extractArea } from "../utils/area.util.js";
@@ -54,6 +54,13 @@ const NAME_BLOCKLIST = [
   "prompt",
   "instructions",
   "ignore previous instructions",
+  "skip",
+  "why",
+  "kyu",
+  "no",
+  "nahi",
+  "nhi",
+  "ni",
 ] as const;
 
 function extractNameCandidate(message: string) {
@@ -96,6 +103,11 @@ function hasExplicitAreaContext(message: string) {
   );
 }
 
+function isAreaQuickReply(message: string) {
+  const normalized = normalizeConversationValue(message).replace(/[^\w+<>-]/g, "");
+  return ["small", "medium", "meduim", "medim", "large"].includes(normalized);
+}
+
 function detectCity(message: string) {
   const lowered = normalizeLower(message);
   const knownCities = QUICK_REPLIES.CITY ?? [];
@@ -131,13 +143,24 @@ function detectTimeline(message: string) {
 
 function hasBudgetSignal(message: string) {
   const lowered = normalizeLower(message);
+  const compact = lowered.replace(/\s+/g, " ").trim();
+  const looksLikeStandaloneBudget =
+    /^(?:₹|rs\.?\s*)?\d+(?:\s*-\s*\d+)?(?:\+)?(?:\s*\/\s*sq\.?\s*ft)?$/.test(compact) ||
+    /^(?:under|below|less than|above|over)\s+\d+(?:\s*\/\s*sq\.?\s*ft)?$/.test(compact);
   return (
-    /\d/.test(message) ||
+    looksLikeStandaloneBudget ||
     message.includes("â‚¹") ||
+    message.includes("₹") ||
+    message.includes("/sqft") ||
     [
+      "budget",
+      "price",
+      "pricing",
+      "quote",
       "under",
       "below",
       "above",
+      "over",
       "between",
       "flexible",
       "premium",
@@ -194,7 +217,7 @@ export class EntityExtractorService {
       });
     }
 
-    if (!shouldKeepExistingBudget && (currentStep === ChatStep.BUDGET || hasExplicitBudgetSignal)) {
+    if (!shouldKeepExistingBudget && (hasExplicitBudgetSignal || allowsFlexibleBudget)) {
       const isNegative = /(^|\s)-\d+/.test(message);
       if (!isNegative) {
         const budget = canonicalizeBudget(message, isVagueConversationValue(message));
@@ -210,8 +233,9 @@ export class EntityExtractorService {
       }
     }
 
-    if (currentStep === ChatStep.AREA || hasExplicitAreaContext(message)) {
-      const area = extractArea(message, { requireExplicitHint: currentStep !== ChatStep.AREA });
+    const areaQuickReply = isAreaQuickReply(message);
+    if (currentStep === ChatStep.AREA || hasExplicitAreaContext(message) || areaQuickReply) {
+      const area = extractArea(message, { requireExplicitHint: currentStep !== ChatStep.AREA && !areaQuickReply });
       if (area.area !== "Not captured" && area.area !== "0") {
         updates.push({
           field: "areaSqft",
@@ -304,9 +328,16 @@ export class EntityExtractorService {
       }
 
       const currentValue = nextData[update.field];
+      const currentNormalized = typeof currentValue === "string" ? normalizeConversationValue(currentValue) : "";
+      const nextNormalized = normalizeConversationValue(update.value);
       const allowOverwrite =
         update.field !== "name" &&
         (currentStep === ChatStep.COMPLETED || update.overwriteMode === "overwrite");
+
+      if (typeof currentValue === "string" && currentValue.trim() && currentNormalized === nextNormalized) {
+        applied.push(update);
+        continue;
+      }
 
       if (typeof currentValue === "string" && currentValue.trim() && !allowOverwrite) {
         rejected.push(update);

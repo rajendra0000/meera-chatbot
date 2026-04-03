@@ -118,7 +118,7 @@ test("generic more-images request asks the user to choose from recent products",
     lastRecommendedProductIds: ["furrow", "serene", "ridge"],
   });
 
-  assert.match(result.reply, /Which product would you like more images of/i);
+  assert.match(result.reply, /Which product do you want more images of/i);
   assert.match(result.reply, /Furrow, Serene, Ridge/);
   assert.equal(result.nextStep, ChatStep.COMPLETED);
   assert.equal(result.collectedData.productType, "Wall Panels (H-UHPC)");
@@ -145,7 +145,7 @@ test("product reply resolves to one exact recent product and returns all images"
     lastRecommendedProductIds: ["furrow", "serene", "ridge"],
   });
 
-  assert.equal(result.reply, "Sure, here are more images of Furrow.");
+  assert.equal(result.reply, "Here are more images of Furrow.");
   assert.equal(result.recommendProducts.length, 1);
   assert.equal(result.recommendProducts[0].name, "Furrow");
   assert.equal(result.recommendProducts[0].imageUrl, "furrow-main.webp");
@@ -218,7 +218,7 @@ test("category confirmation switch sends images without changing product type", 
     lastRecommendedProductIds: ["furrow", "serene", "ridge"],
   });
 
-  assert.equal(result.reply, "Sure, here are more images of Furrow.");
+  assert.equal(result.reply, "Here are more images of Furrow.");
   assert.equal(result.recommendProducts.length, 1);
   assert.equal(result.recommendProducts[0].id, "furrow");
   assert.equal(result.collectedData.productType, "Wall Murals");

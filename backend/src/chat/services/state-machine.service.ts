@@ -70,7 +70,8 @@ export class StateMachineService {
     }
 
     const missingStep = ConversationHelper.getMissingRequiredStep(nextData);
-    const staysOnCurrentStep =
+    const nextStep = missingStep ?? ChatStep.COMPLETED;
+    const holdsOnPendingStep =
       intent.intent === "FAQ" ||
       intent.intent === "IRRELEVANT" ||
       intent.intent === "SMALL_TALK" ||
@@ -78,8 +79,6 @@ export class StateMachineService {
       intent.intent === "EMPTY" ||
       intent.intent === "SPAM" ||
       intent.intent === "INVALID";
-
-    const nextStep = staysOnCurrentStep ? currentStep : missingStep ?? ChatStep.COMPLETED;
 
     return {
       nextStep,
@@ -90,7 +89,7 @@ export class StateMachineService {
       handoverTrigger: null,
       browseMode: intent.browseOnly ? "browse_only" : "default",
       collectedData: nextData,
-      reason: staysOnCurrentStep ? "stay_on_step" : nextStep === ChatStep.COMPLETED ? "completed" : "advance",
+      reason: holdsOnPendingStep ? "stay_on_pending_step" : nextStep === ChatStep.COMPLETED ? "completed" : "advance",
     };
   }
 }

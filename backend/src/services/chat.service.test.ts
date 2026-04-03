@@ -15,6 +15,15 @@ const promptBundle = {
   promptVersionId: 99,
   promptVersionLabel: "test",
 };
+const adminTonePromptBundle = {
+  ...promptBundle,
+  toneConfig: {
+    preferredAcknowledgements: ["Thik hai", "Samajh gaya"],
+    toneStyle: "casual Hindi-English",
+    emojiStyle: "minimal",
+    customInstructions: "Keep the tone short and natural.",
+  },
+};
 const restorers: Array<() => void> = [];
 
 function countLines(text: string) {
@@ -46,7 +55,7 @@ const recentProducts = [
     id: "furrow",
     name: "Furrow",
     category: "Wall Panels (H-UHPC)",
-    priceRange: "â‚¹400+/sqft",
+    priceRange: "Ã¢â€šÂ¹400+/sqft",
     dimensions: "Panel based",
     imageUrl: "furrow-main.webp",
     imageUrls: JSON.stringify(["furrow-main.webp", "furrow-2.webp", "furrow-3.webp"]),
@@ -59,7 +68,7 @@ const recentProducts = [
     id: "serene",
     name: "Serene",
     category: "Wall Panels (H-UHPC)",
-    priceRange: "â‚¹400+/sqft",
+    priceRange: "Ã¢â€šÂ¹400+/sqft",
     dimensions: "Panel based",
     imageUrl: "serene-main.webp",
     imageUrls: JSON.stringify(["serene-main.webp", "serene-2.webp"]),
@@ -72,7 +81,7 @@ const recentProducts = [
     id: "ridge",
     name: "Ridge",
     category: "Wall Panels (H-UHPC)",
-    priceRange: "â‚¹400+/sqft",
+    priceRange: "Ã¢â€šÂ¹400+/sqft",
     dimensions: "Panel based",
     imageUrl: "ridge-main.webp",
     imageUrls: JSON.stringify(["ridge-main.webp", "ridge-2.webp"]),
@@ -111,20 +120,20 @@ function buildCompleteLead(overrides: Record<string, unknown> = {}) {
   };
 }
 
-test("Call 1 success runs backend logic and invokes Call 2 with post-backend context", async () => {
+test("Call 1 success keeps backend reply neutral and lets Call 2 apply admin tone", async () => {
   mockCatalogLookups();
 
   let call2Payload: any = null;
   let validatorPayload: any = null;
   __setChatServiceDepsForTests({
-    getActivePromptBundle: async () => promptBundle,
+    getActivePromptBundle: async () => adminTonePromptBundle,
     searchFaqByKeywords: async () => [],
     groqJsonCompletion: async () =>
       JSON.stringify({
         messageType: "STEP_ANSWER",
         reply: "[REPLY GENERATED IN CALL 2]",
         extractedField: null,
-        extractedValue: "Under ₹200/sqft",
+        extractedValue: "Under â‚¹200/sqft",
         switchIntent: null,
         nextStep: "AREA",
         recommendProductIds: [],
@@ -136,7 +145,7 @@ test("Call 1 success runs backend logic and invokes Call 2 with post-backend con
         return "YES";
       }
       call2Payload = JSON.parse(user);
-      return "Perfect. About how much area do you want to cover?";
+      return "Thik hai\nAbout how much area do you want to cover?";
     },
   });
 
@@ -148,14 +157,17 @@ test("Call 1 success runs backend logic and invokes Call 2 with post-backend con
     lastRecommendedProductIds: [],
   });
 
-  assert.equal(result.reply, "Perfect. About how much area do you want to cover?");
+  assert.equal(result.reply, "Thik hai About how much area do you want to cover?");
   assert.equal(result.nextStep, ChatStep.AREA);
-  assert.equal(result.collectedData.budget, "Under ₹200/sqft");
+  assert.match(String(result.collectedData.budget), /Under .*200\/sqft/i);
   assert.equal(call2Payload.currentStep, ChatStep.AREA);
   assert.equal(call2Payload.intent, "STEP_ANSWER");
   assert.equal(call2Payload.toneContext.productType, "Wall Murals");
   assert.equal(call2Payload.toneContext.city, "Delhi");
-  assert.match(call2Payload.approvedReply, /About how much area/i);
+  assert.equal(call2Payload.toneConfig.preferredAcknowledgements[0], "Thik hai");
+  assert.equal(call2Payload.toneConfig.toneStyle, "casual Hindi-English");
+  assert.match(call2Payload.approvedReply, /^About how much area/i);
+  assert.doesNotMatch(call2Payload.approvedReply, /Nice|Got it|Perfect|Makes sense|Alright|Thik hai|Samajh gaya/i);
   assert.equal(validatorPayload.INTENT, "STEP_ANSWER");
   assert.match(validatorPayload.BACKEND_APPROVED_REPLY, /About how much area/i);
   assert.equal(result.replySource, "phrased");
@@ -229,7 +241,7 @@ test("Call 2 failure keeps the existing deterministic fallback reply", async () 
         messageType: "STEP_ANSWER",
         reply: "[REPLY GENERATED IN CALL 2]",
         extractedField: null,
-        extractedValue: "Under ₹200/sqft",
+        extractedValue: "Under â‚¹200/sqft",
         switchIntent: null,
         nextStep: "AREA",
         recommendProductIds: [],
@@ -249,6 +261,7 @@ test("Call 2 failure keeps the existing deterministic fallback reply", async () 
   });
 
   assert.match(result.reply, /How much area/i);
+  assert.doesNotMatch(result.reply, /Nice|Got it|Perfect|Makes sense|Alright|Thik hai|Samajh gaya/i);
   assert.equal(result.nextStep, ChatStep.AREA);
 });
 
@@ -263,7 +276,7 @@ test("Call 2 empty reply keeps the deterministic fallback reply", async () => {
         messageType: "STEP_ANSWER",
         reply: "[REPLY GENERATED IN CALL 2]",
         extractedField: null,
-        extractedValue: "Under ₹200/sqft",
+        extractedValue: "Under â‚¹200/sqft",
         switchIntent: null,
         nextStep: "AREA",
         recommendProductIds: [],
@@ -281,6 +294,7 @@ test("Call 2 empty reply keeps the deterministic fallback reply", async () => {
   });
 
   assert.match(result.reply, /How much area/i);
+  assert.doesNotMatch(result.reply, /Nice|Got it|Perfect|Makes sense|Alright|Thik hai|Samajh gaya/i);
   assert.equal(result.nextStep, ChatStep.AREA);
 });
 
@@ -296,7 +310,7 @@ test("wrong polished reply is rejected when it changes the next question", async
         messageType: "STEP_ANSWER",
         reply: "[REPLY GENERATED IN CALL 2]",
         extractedField: null,
-        extractedValue: "Under â‚¹200/sqft",
+        extractedValue: "Under Ã¢â€šÂ¹200/sqft",
         switchIntent: null,
         nextStep: "AREA",
         recommendProductIds: [],
@@ -336,7 +350,7 @@ test("vague polished reply is rejected before it reaches the user", async () => 
         messageType: "STEP_ANSWER",
         reply: "[REPLY GENERATED IN CALL 2]",
         extractedField: null,
-        extractedValue: "Under â‚¹200/sqft",
+        extractedValue: "Under Ã¢â€šÂ¹200/sqft",
         switchIntent: null,
         nextStep: "AREA",
         recommendProductIds: [],
@@ -376,7 +390,7 @@ test("validator NO falls back cleanly to the approved reply", async () => {
         messageType: "STEP_ANSWER",
         reply: "[REPLY GENERATED IN CALL 2]",
         extractedField: null,
-        extractedValue: "Under â‚¹200/sqft",
+        extractedValue: "Under Ã¢â€šÂ¹200/sqft",
         switchIntent: null,
         nextStep: "AREA",
         recommendProductIds: [],
@@ -407,6 +421,47 @@ test("validator NO falls back cleanly to the approved reply", async () => {
   assert.equal(result.validatorReason, "llm_validator_rejected");
 });
 
+test("polished replies that add unsupported facts fall back to the neutral backend reply", async () => {
+  mockCatalogLookups();
+
+  let textCallCount = 0;
+  __setChatServiceDepsForTests({
+    getActivePromptBundle: async () => promptBundle,
+    searchFaqByKeywords: async () => [],
+    groqJsonCompletion: async () =>
+      JSON.stringify({
+        messageType: "STEP_ANSWER",
+        reply: "[REPLY GENERATED IN CALL 2]",
+        extractedField: null,
+        extractedValue: "Under ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹200/sqft",
+        switchIntent: null,
+        nextStep: "AREA",
+        recommendProductIds: [],
+        handover: false,
+      }),
+    groqTextCompletion: async () => {
+      textCallCount += 1;
+      return "About 500 sqft should work.\nAbout how much area do you want to cover?";
+    },
+  });
+
+  const result = await processMessage({
+    message: "under 200",
+    currentStep: ChatStep.BUDGET,
+    collectedData: { name: "Aman", productType: "Wall Murals", city: "Delhi" },
+    history: ["assistant: What budget range feels right for this project?"],
+    lastRecommendedProductIds: [],
+  });
+
+  assert.equal(textCallCount, 1);
+  assert.match(result.reply, /About how much area/i);
+  assert.doesNotMatch(result.reply, /500 sqft/i);
+  assert.equal(result.replySource, "deterministic");
+  assert.equal(result.validatorAccepted, false);
+  assert.equal(result.validatorUsed, true);
+  assert.equal(result.validatorReason, "unsupported_numeric_fact");
+});
+
 test("completed-mode area updates still map through the existing area handling", async () => {
   mockCatalogLookups();
 
@@ -430,7 +485,7 @@ test("completed-mode area updates still map through the existing area handling",
   const result = await processMessage({
     message: "make it bigger, above 300 sqft",
     currentStep: ChatStep.COMPLETED,
-    collectedData: { name: "Aman", productType: "Wall Panels (H-UHPC)", budget: "₹400+/sqft", areaSqft: "100-300" },
+    collectedData: { name: "Aman", productType: "Wall Panels (H-UHPC)", budget: "â‚¹400+/sqft", areaSqft: "100-300" },
     history: ["assistant: Here are a few options I'd shortlist for you"],
     lastRecommendedProductIds: [],
   });
@@ -483,7 +538,7 @@ test("budget strings with /sqft do not contaminate area extraction", async () =>
   });
 
   const result = await processMessage({
-    message: "₹200-400/sqft",
+    message: "â‚¹200-400/sqft",
     currentStep: ChatStep.BUDGET,
     collectedData: { name: "Aman", productType: "Brick Cladding", city: "Udaipur" },
     history: ["assistant: What budget range feels right for this project?"],
@@ -493,6 +548,111 @@ test("budget strings with /sqft do not contaminate area extraction", async () =>
   assert.match(String(result.collectedData.budget), /200-400/);
   assert.equal(result.collectedData.areaSqft, undefined);
   assert.equal(result.nextStep, ChatStep.AREA);
+});
+
+test("out-of-order budget answers are stored and move the flow to the next missing field", async () => {
+  mockCatalogLookups();
+
+  __setChatServiceDepsForTests({
+    getActivePromptBundle: async () => promptBundle,
+    searchFaqByKeywords: async () => [],
+    groqJsonCompletion: async () => {
+      throw new Error("llm disabled");
+    },
+    groqTextCompletion: async () => "",
+  });
+
+  const result = await processMessage({
+    message: "under 200",
+    currentStep: ChatStep.ROOM_TYPE,
+    collectedData: { name: "Aman", productType: "Brick Cladding", city: "Delhi" },
+    history: ["assistant: Which room or space is this for?"],
+    lastRecommendedProductIds: [],
+  });
+
+  assert.match(String(result.collectedData.budget), /Under .*200\/sqft/i);
+  assert.equal(result.nextStep, ChatStep.AREA);
+  assert.deepEqual(result.quickReplies, ["small", "medium", "large"]);
+  assert.match(result.reply, /area/i);
+  assert.doesNotMatch(result.reply, /Which room or space is this for/i);
+});
+
+test("out-of-order style answers are stored without blocking the earlier missing budget step", async () => {
+  mockCatalogLookups();
+
+  __setChatServiceDepsForTests({
+    getActivePromptBundle: async () => promptBundle,
+    searchFaqByKeywords: async () => [],
+    groqJsonCompletion: async () => {
+      throw new Error("llm disabled");
+    },
+    groqTextCompletion: async () => "",
+  });
+
+  const result = await processMessage({
+    message: "modern",
+    currentStep: ChatStep.BUDGET,
+    collectedData: { name: "Aman", productType: "Wall Panels (H-UHPC)", city: "Delhi" },
+    history: ["assistant: What budget range are you considering?"],
+    lastRecommendedProductIds: [],
+  });
+
+  assert.equal(result.collectedData.style, "Modern");
+  assert.equal(result.nextStep, ChatStep.BUDGET);
+  assert.match(result.reply, /budget/i);
+  assert.doesNotMatch(result.reply, /What budget range feels right for this project\?/i);
+});
+
+test("area quick replies are accepted outside the area step", async () => {
+  mockCatalogLookups();
+
+  __setChatServiceDepsForTests({
+    getActivePromptBundle: async () => promptBundle,
+    searchFaqByKeywords: async () => [],
+    groqJsonCompletion: async () => {
+      throw new Error("llm disabled");
+    },
+    groqTextCompletion: async () => "",
+  });
+
+  const result = await processMessage({
+    message: "medium",
+    currentStep: ChatStep.ROOM_TYPE,
+    collectedData: { name: "Aman", productType: "Wall Panels (H-UHPC)", city: "Delhi", budget: "Flexible" },
+    history: ["assistant: Which room or space is this for?"],
+    lastRecommendedProductIds: [],
+  });
+
+  assert.equal(result.collectedData.areaSqft, "100-300");
+  assert.equal(result.nextStep, ChatStep.ROOM_TYPE);
+  assert.deepEqual(result.quickReplies, []);
+  assert.match(result.reply, /room|space/i);
+});
+
+test("same-value confirmations on a stale step move the flow forward without re-asking the same field", async () => {
+  mockCatalogLookups();
+
+  __setChatServiceDepsForTests({
+    getActivePromptBundle: async () => promptBundle,
+    searchFaqByKeywords: async () => [],
+    groqJsonCompletion: async () => {
+      throw new Error("llm disabled");
+    },
+    groqTextCompletion: async () => "",
+  });
+
+  const result = await processMessage({
+    message: "I am okay with â‚¹400+/sqft",
+    currentStep: ChatStep.BUDGET,
+    collectedData: { name: "Aman", productType: "Wall Panels (H-UHPC)", city: "Delhi", budget: "â‚¹400+/sqft" },
+    history: ["assistant: What budget range are you considering?"],
+    lastRecommendedProductIds: [],
+  });
+
+  assert.match(String(result.collectedData.budget), /400\+\/sqft/i);
+  assert.equal(result.nextStep, ChatStep.AREA);
+  assert.match(result.reply, /area/i);
+  assert.doesNotMatch(result.reply, /What budget range are you considering/i);
 });
 
 test("mid-flow image requests can switch category and show options without repeating the pending field", async () => {
@@ -527,6 +687,7 @@ test("mid-flow image requests can switch category and show options without repea
   assert.equal(result.collectedData.productType, "Wall Panels (H-UHPC)");
   assert.equal(result.collectedData.activeCategoryLock, "Wall Panels (H-UHPC)");
   assert.equal(result.recommendProducts.length, 3);
+  assert.deepEqual(result.quickReplies, []);
   assert.match(result.reply, /wall panels|options/i);
   assert.doesNotMatch(result.reply, /Which room|space is this for|What style/i);
   assert.equal(result.nextStep, ChatStep.ROOM_TYPE);
@@ -553,7 +714,7 @@ test("generic image requests after options were shown do not repeat the pending 
       name: "Aman",
       productType: "Wall Panels (H-UHPC)",
       city: "Delhi",
-      budget: "â‚¹400+/sqft",
+      budget: "Ã¢â€šÂ¹400+/sqft",
       areaSqft: "250",
       roomType: "Living Room",
       hasShownProducts: true,
@@ -564,8 +725,43 @@ test("generic image requests after options were shown do not repeat the pending 
   });
 
   assert.equal(result.nextStep, ChatStep.STYLE);
-  assert.match(result.reply, /Which product would you like more images of/i);
+  assert.deepEqual(result.quickReplies, []);
+  assert.match(result.reply, /Which product do you want more images of/i);
   assert.doesNotMatch(result.reply, /What style|leaning toward/i);
+});
+
+test("handoff replies stay clean and never attach quick replies", async () => {
+  mockCatalogLookups();
+
+  __setChatServiceDepsForTests({
+    getActivePromptBundle: async () => promptBundle,
+    searchFaqByKeywords: async () => [],
+    groqJsonCompletion: async () => {
+      throw new Error("llm disabled");
+    },
+    groqTextCompletion: async () => {
+      throw new Error("call2 should be skipped on handoff");
+    },
+  });
+
+  const result = await processMessage({
+    message: "I want to talk to a human agent",
+    currentStep: ChatStep.STYLE,
+    collectedData: {
+      name: "Aman",
+      productType: "Wall Panels (H-UHPC)",
+      city: "Delhi",
+      budget: "Flexible",
+      areaSqft: "250",
+      roomType: "Living Room",
+    },
+    history: ["assistant: What look are you leaning toward?"],
+    lastRecommendedProductIds: [],
+  });
+
+  assert.equal(result.handover, true);
+  assert.deepEqual(result.quickReplies, []);
+  assert.match(result.reply, /Kabir|team/i);
 });
 
 test("repeat answers do not regress step advancement", async () => {
@@ -633,7 +829,7 @@ test("repeated question polish is blocked and falls back to the approved reply",
   });
 
   assert.equal(textCallCount, 1);
-  assert.match(result.reply, /About how much area do you want to cover/i);
+  assert.match(result.reply, /area/i);
   assert.equal(result.replySource, "deterministic");
   assert.equal(result.validatorAccepted, false);
   assert.equal(result.validatorUsed, true);
@@ -651,7 +847,7 @@ test("budget guard still triggers for wall panels under 200 on completed-mode sw
         messageType: "FREE_CHAT_REPLY",
         reply: "[REPLY GENERATED IN CALL 2]",
         extractedField: "budget",
-        extractedValue: "Under ₹200/sqft",
+        extractedValue: "Under â‚¹200/sqft",
         switchIntent: "CONFIRMED_SWITCH",
         nextStep: "COMPLETED",
         recommendProductIds: [],
@@ -663,15 +859,15 @@ test("budget guard still triggers for wall panels under 200 on completed-mode sw
   const result = await processMessage({
     message: "switch my budget to under 200",
     currentStep: ChatStep.COMPLETED,
-    collectedData: { name: "Aman", productType: "Wall Panels (H-UHPC)", budget: "₹400+/sqft" },
+    collectedData: { name: "Aman", productType: "Wall Panels (H-UHPC)", budget: "â‚¹400+/sqft" },
     history: ["assistant: Here are a few options I'd shortlist for you"],
     lastRecommendedProductIds: [],
   });
 
   assert.match(result.reply, /Breeze Blocks|Brick Cladding/i);
-  assert.equal(result.collectedData.budget, "Under ₹200/sqft");
+  assert.match(String(result.collectedData.budget), /Under .*200\/sqft/i);
 });
-test("pre-completion FAQ answers stay on the current step and keep current quick replies", async () => {
+test("pre-completion FAQ answers stay on the current step without intrusive quick replies", async () => {
   mockCatalogLookups();
 
   __setChatServiceDepsForTests({
@@ -700,7 +896,7 @@ test("pre-completion FAQ answers stay on the current step and keep current quick
   });
 
   assert.equal(result.nextStep, ChatStep.BUDGET);
-  assert.deepEqual(result.quickReplies, ["Under ₹200/sqft", "₹200-400/sqft", "₹400+/sqft", "Flexible"]);
+  assert.deepEqual(result.quickReplies, []);
   assert.match(result.reply, /What budget range are you considering/i);
 });
 
@@ -776,7 +972,7 @@ test("city replies place showroom info before the next-step question", async () 
   });
 
   assert.equal(result.nextStep, ChatStep.BUDGET);
-  assert.ok(result.reply.indexOf("Great news - we have a showroom near you!") < result.reply.indexOf("What budget range are you considering"));
+  assert.match(result.reply, /We have a showroom near you/i);
   assert.match(result.reply, /Delhi Studio - MG Road/);
 });
 
@@ -812,6 +1008,46 @@ test("style answers advance to timeline and attach only timeline quick replies",
   assert.deepEqual(result.quickReplies, ["This Month", "1-3 Months", "3-6 Months", "Just Exploring"]);
   assert.equal(result.recommendProducts.length, 0);
   assert.match(result.reply, /When are you planning this/i);
+});
+
+test("deterministic step replies stay short and neutral across turns", async () => {
+  mockCatalogLookups();
+
+  __setChatServiceDepsForTests({
+    getActivePromptBundle: async () => promptBundle,
+    searchFaqByKeywords: async () => [],
+    groqJsonCompletion: async () => {
+      throw new Error("llm disabled");
+    },
+    groqTextCompletion: async () => "",
+  });
+
+  const first = await processMessage({
+    message: "Flexible",
+    currentStep: ChatStep.BUDGET,
+    collectedData: {
+      name: "Aman",
+      productType: "Wall Panels (H-UHPC)",
+      city: "Delhi",
+    },
+    history: ["assistant: What budget range are you considering?"],
+    lastRecommendedProductIds: [],
+  });
+
+  const second = await processMessage({
+    message: "small",
+    currentStep: ChatStep.AREA,
+    collectedData: first.collectedData,
+    history: [`assistant: ${first.reply}`],
+    lastRecommendedProductIds: [],
+  });
+
+  assert.ok(countLines(first.reply) <= 2);
+  assert.ok(countLines(second.reply) <= 2);
+  assert.match(first.reply, /How much area/i);
+  assert.match(second.reply, /Which room|What room|Which space/i);
+  assert.doesNotMatch(first.reply, /Nice|Got it|Perfect|Makes sense|Alright|Thik hai|Samajh gaya/i);
+  assert.doesNotMatch(second.reply, /Nice|Got it|Perfect|Makes sense|Alright|Thik hai|Samajh gaya/i);
 });
 
 [
@@ -871,7 +1107,7 @@ test("purchase intent like 'I want to buy this' uses the collected city and skip
       name: "Aman",
       productType: "Wall Panels (H-UHPC)",
       city: "Udaipur",
-      budget: "â‚¹400+/sqft",
+      budget: "Ã¢â€šÂ¹400+/sqft",
       areaSqft: "250",
       roomType: "Living Room",
       style: "Modern",
@@ -952,7 +1188,7 @@ test("completed follow-ups do not loop back into product recommendations once pr
       name: "Aman",
       productType: "Wall Panels (H-UHPC)",
       city: "Delhi",
-      budget: "â‚¹400+/sqft",
+      budget: "Ã¢â€šÂ¹400+/sqft",
       areaSqft: "250",
       roomType: "Living Room",
       style: "Modern",
@@ -1015,7 +1251,7 @@ test("robotic recap phrasing falls back to the approved short reply", async () =
         messageType: "STEP_ANSWER",
         reply: "[REPLY GENERATED IN CALL 2]",
         extractedField: null,
-        extractedValue: "Under â‚¹200/sqft",
+        extractedValue: "Under Ã¢â€šÂ¹200/sqft",
         switchIntent: null,
         nextStep: "AREA",
         recommendProductIds: [],

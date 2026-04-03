@@ -3,6 +3,41 @@ import { QUICK_REPLIES, REQUIRED_FIELDS, STEP_ORDER, STEP_PROMPTS } from "../con
 import { isVagueConversationValue, normalizeConversationValue } from "../constants/conversation.constants.js";
 import { CollectedData } from "../types/conversation.types.js";
 
+const STEP_PROMPT_VARIANTS: Partial<Record<ChatStep, string[]>> = {
+  [ChatStep.NAME]: [
+    STEP_PROMPTS.NAME,
+    "What name should I save for you?",
+  ],
+  [ChatStep.PRODUCT_TYPE]: [
+    STEP_PROMPTS.PRODUCT_TYPE,
+    "Which category are you looking at: wall panels, wall murals, breeze blocks, or brick cladding?",
+  ],
+  [ChatStep.CITY]: [
+    STEP_PROMPTS.CITY,
+    "Which city is this project in?",
+  ],
+  [ChatStep.BUDGET]: [
+    STEP_PROMPTS.BUDGET,
+    "What budget range works for this project? A rough range is fine.",
+  ],
+  [ChatStep.AREA]: [
+    STEP_PROMPTS.AREA,
+    "Roughly how much area are you looking to cover?",
+  ],
+  [ChatStep.ROOM_TYPE]: [
+    STEP_PROMPTS.ROOM_TYPE,
+    "Which space is this going in?",
+  ],
+  [ChatStep.STYLE]: [
+    STEP_PROMPTS.STYLE,
+    "What style do you have in mind: minimal, modern, geometric, textured, or statement?",
+  ],
+  [ChatStep.TIMELINE]: [
+    STEP_PROMPTS.TIMELINE,
+    "When are you hoping to start: This Month, 1-3 Months, 3-6 Months, or Just Exploring?",
+  ],
+};
+
 export class ConversationHelper {
   static buildAtomicReply(acknowledgment: string, stepQuestion: string | null, showroomMsg: string | null): string {
     const firstLine = [acknowledgment, !showroomMsg ? stepQuestion : null]
@@ -45,6 +80,10 @@ export class ConversationHelper {
     }
   }
 
+  static getStepQuestionVariants(step: ChatStep): string[] {
+    return STEP_PROMPT_VARIANTS[step] ?? [ConversationHelper.getStepQuestion(step)];
+  }
+
   static getMissingRequiredStep(collectedData: CollectedData): ChatStep | null {
     const isFieldMissing = (value: unknown) => {
       if (value === null || value === undefined) return true;
@@ -71,5 +110,32 @@ export class ConversationHelper {
 
   static getQuickReplies(step: ChatStep): string[] {
     return QUICK_REPLIES[step] ?? [];
+  }
+
+  static getFieldForStep(step: ChatStep): string | null {
+    const match = REQUIRED_FIELDS.find(([, requiredStep]) => requiredStep === step);
+    return match?.[0] ?? null;
+  }
+
+  static getStepForField(field: string | null | undefined): ChatStep | null {
+    if (!field) {
+      return null;
+    }
+
+    const match = REQUIRED_FIELDS.find(([requiredField]) => requiredField === field);
+    return match?.[1] ?? null;
+  }
+
+  static isStepFilled(step: ChatStep, collectedData: CollectedData): boolean {
+    const field = ConversationHelper.getFieldForStep(step);
+    if (!field) {
+      return step === ChatStep.COMPLETED;
+    }
+
+    const value = collectedData[field];
+    if (value === null || value === undefined) return false;
+    const normalized = normalizeConversationValue(String(value));
+    if (!normalized || normalized === "not captured") return false;
+    return !isVagueConversationValue(normalized);
   }
 }

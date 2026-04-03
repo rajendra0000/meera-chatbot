@@ -1,4 +1,5 @@
 import { PromptType } from "@prisma/client";
+import type { ToneConfig } from "../chat/types/chat.types.js";
 import { prisma } from "../lib/prisma.js";
 
 export const SYSTEM_PROMPT_CONTENT = `You are Meera, a warm human-feeling interior consultant from Hey Concrete.
@@ -119,6 +120,74 @@ Generate one perfectly structured JSON object complying with these strict atomic
 
 const fallbackLearning = `Prefer elegant Hindi-English phrasing. Use "Kyo nahi" when saying yes. Keep replies grounded and human.`;
 
+function normalizeToneConfig(input: unknown): ToneConfig | null {
+  if (!input || typeof input !== "object") {
+    return null;
+  }
+
+  const candidate = input as Record<string, unknown>;
+  const toneConfig: ToneConfig = {};
+
+  if (Array.isArray(candidate.preferredAcknowledgements)) {
+    const preferredAcknowledgements = candidate.preferredAcknowledgements
+      .filter((item): item is string => typeof item === "string")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, 8);
+
+    if (preferredAcknowledgements.length > 0) {
+      toneConfig.preferredAcknowledgements = preferredAcknowledgements;
+    }
+  }
+
+  if (typeof candidate.toneStyle === "string" && candidate.toneStyle.trim()) {
+    toneConfig.toneStyle = candidate.toneStyle.trim();
+  }
+
+  if (typeof candidate.emojiStyle === "string" && candidate.emojiStyle.trim()) {
+    toneConfig.emojiStyle = candidate.emojiStyle.trim();
+  }
+
+  if (typeof candidate.customInstructions === "string" && candidate.customInstructions.trim()) {
+    toneConfig.customInstructions = candidate.customInstructions.trim();
+  }
+
+  return Object.keys(toneConfig).length > 0 ? toneConfig : null;
+}
+
+function parseLearningToneConfig(content: string): ToneConfig | null {
+  const trimmed = content.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const jsonCandidate = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1]?.trim() ?? trimmed;
+
+  try {
+    const parsed = JSON.parse(jsonCandidate) as unknown;
+    if (typeof parsed === "string" && parsed.trim()) {
+      return { customInstructions: parsed.trim() };
+    }
+
+    const directConfig = normalizeToneConfig(parsed);
+    if (directConfig) {
+      return directConfig;
+    }
+
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      "toneConfig" in (parsed as Record<string, unknown>)
+    ) {
+      return normalizeToneConfig((parsed as Record<string, unknown>).toneConfig);
+    }
+  } catch {
+    // Free-form learning prompts stay supported through customInstructions.
+  }
+
+  return { customInstructions: trimmed };
+}
+
 function mergeLearningCorrection(currentContent: string, correction: string) {
   const trimmedCurrent = currentContent.trim();
   const trimmedCorrection = correction.trim();
@@ -189,21 +258,25 @@ export async function getActivePromptBundle() {
 
     const system = systemPrompt?.content ?? SYSTEM_PROMPT_CONTENT;
     const learning = learningPrompt?.content ?? fallbackLearning;
+    const toneConfig = parseLearningToneConfig(learning);
 
     return {
       system,
       learning,
       combined: `${system}\n\n${learning}`,
       promptVersionId: learningPrompt?.id ?? null,
+      toneConfig,
       promptVersionLabel: learningPrompt ? `v${learningPrompt.versionNumber} · Learning` : "Default Prompt"
     };
   } catch {
+    const toneConfig = parseLearningToneConfig(fallbackLearning);
     return {
       system: SYSTEM_PROMPT_CONTENT,
       learning: fallbackLearning,
       combined: `${SYSTEM_PROMPT_CONTENT}\n\n${fallbackLearning}`,
       promptVersionId: null,
-      promptVersionLabel: "Default Prompt"
+      promptVersionLabel: "Default Prompt",
+      toneConfig,
     };
   }
 }

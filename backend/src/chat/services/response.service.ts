@@ -1,7 +1,7 @@
 import { ChatStep } from "@prisma/client";
 import { ConversationHelper } from "../../helpers/conversation.helper.js";
 import { CollectedData } from "../../types/conversation.types.js";
-import { ChatRuntimeDeps } from "../types/chat.types.js";
+import { ChatRuntimeDeps, ToneConfig } from "../types/chat.types.js";
 import { ResponsePlan } from "../types/response.types.js";
 import { IntentResult } from "../types/intent.types.js";
 import { TEAM_HANDOVER_MESSAGE } from "./handover.service.js";
@@ -9,58 +9,22 @@ import { resolveActiveCategoryLock } from "./product.service.js";
 import { ResponseValidatorService, enforceReplyShape } from "./response-validator.service.js";
 
 const CALL2_REWRITE_PROMPT =
-  "Rewrite only the backend-approved WhatsApp reply as Meera. Keep the meaning, business logic, and question intent exactly the same. Do not add facts, do not change the ask, and do not make decisions. Use 1-3 short lines, warm human tone, and light WhatsApp phrasing. Avoid robotic lines like 'That helps', 'Sounds good', or 'Based on your preferences'. Return plain text only.";
+  "You are Meera, the tone layer for a WhatsApp sales chatbot. The BACKEND_APPROVED_REPLY is the source of truth for meaning, business logic, grounding, and question intent. Rewrite ONLY the approved reply. Do not change the meaning, do not change the question being asked, do not add facts, and do not make decisions. Your job is only HOW to say it. Follow TONE_CONFIG when provided: respect toneStyle, emojiStyle, preferredAcknowledgements, and customInstructions. If preferredAcknowledgements are provided, prefer them over default acknowledgements. Keep replies short, human, and WhatsApp-style, usually 1-2 lines. Add an acknowledgement only if it sounds natural. Return plain text only.";
 
-const ACKNOWLEDGMENT_OPTIONS = {
-  name: [
-    "Nice to meet you",
-    "Good to know",
-    "Perfect",
-  ],
-  budget: [
-    "Got it",
-    "Perfect",
-    "Okay",
-  ],
-  area: [
-    "Perfect",
-    "That works",
-    "Got it",
-  ],
-  room: [
-    "Nice",
-    "Perfect",
-    "Got it",
-  ],
-  style: [
-    "Nice choice",
-    "Perfect",
-    "Nice",
-  ],
-  completed: [
-    "Perfect",
-    "Nice",
-    "That works",
-  ],
-  generic: [
-    "Got it",
-    "Okay",
-    "That works",
-  ],
-} as const;
-
-const REDIRECT_OPTIONS = {
-  collecting: [
-    "Sure.",
-    "Okay.",
-    "Of course.",
-  ],
-  completed: [
-    "Sure.",
-    "Okay.",
-    "I can help with that.",
-  ],
-} as const;
+const STRUCTURED_QUICK_REPLY_STEPS = new Set<ChatStep>([
+  ChatStep.AREA,
+  ChatStep.STYLE,
+  ChatStep.TIMELINE,
+]);
+const QUICK_REPLY_BLOCKED_INTENTS = new Set<string>([
+  "FAQ",
+  "SMALL_TALK",
+  "IRRELEVANT",
+  "SHOW_PRODUCTS",
+  "MORE_IMAGES",
+  "PRODUCT_SWITCH",
+  "PURCHASE_INTENT",
+]);
 
 function splitShowroomMessage(showroomMsg: string | null) {
   const lines = showroomMsg
@@ -76,39 +40,67 @@ function splitShowroomMessage(showroomMsg: string | null) {
   };
 }
 
-function buildAtomicReply(acknowledgment: string, showroomMsg: string | null, stepQuestion: string | null) {
+function buildComposedReply(primaryMessage: string | null, showroomMsg: string | null, stepQuestion: string | null) {
   const showroomParts = splitShowroomMessage(showroomMsg);
-  const compactShowroomMsg = [showroomParts.lead, showroomParts.details].filter(Boolean).join(" | ");
-  const firstLine = [acknowledgment, !showroomMsg ? stepQuestion : null]
+  const compactShowroomMsg = [showroomParts.lead, showroomParts.details].filter(Boolean).join("\n");
+
+  return [primaryMessage, compactShowroomMsg, stepQuestion]
     .filter((item) => item && item.trim())
-    .join(" ")
-    .trim();
-
-  return [firstLine, compactShowroomMsg, showroomMsg ? stepQuestion : null]
-    .filter((item) => item && item.trim())
-    .join("\n\n");
-}
-
-function firstName(name?: string) {
-  return name?.trim().split(/\s+/)[0] ?? "";
-}
-
-function rotateCopy(
-  collectedData: CollectedData,
-  bucket: "usedAcknowledgements" | "usedRedirects",
-  options: readonly string[]
-) {
-  const previous = Array.isArray(collectedData[bucket])
-    ? collectedData[bucket].filter((item): item is string => typeof item === "string")
-    : [];
-  const next = options.find((option) => !previous.includes(option)) ?? options[previous.length % options.length] ?? "";
-  collectedData[bucket] = [...previous, next].slice(-4);
-  return next;
+    .join("\n");
 }
 
 function getCurrentCategoryLabel(collectedData: CollectedData) {
   const category = resolveActiveCategoryLock(collectedData);
   return category ? category.replace(/\s*\(.*?\)\s*/g, "").trim() : "this category";
+}
+
+function getLatestAssistantQuestion(history: string[]) {
+  const assistantMessages = history
+    .filter((entry) => entry.toLowerCase().startsWith("assistant:"))
+    .map((entry) => entry.replace(/^assistant:\s*/i, "").trim())
+    .reverse();
+
+  for (const message of assistantMessages) {
+    const question = message.match(/[^?]+\?/g)?.pop()?.trim();
+    if (question) {
+      return question;
+    }
+  }
+
+  return null;
+}
+
+function questionsFeelRepeated(a: string, b: string) {
+  const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  const normalizedA = normalize(a);
+  const normalizedB = normalize(b);
+
+  if (!normalizedA || !normalizedB) {
+    return false;
+  }
+
+  if (
+    normalizedA === normalizedB ||
+    normalizedA.includes(normalizedB) ||
+    normalizedB.includes(normalizedA)
+  ) {
+    return true;
+  }
+
+  const tokensA = normalizedA.split(" ").filter((token) => token.length > 2);
+  const tokensB = normalizedB.split(" ").filter((token) => token.length > 2);
+  const overlap = tokensA.filter((token) => tokensB.includes(token)).length;
+  return overlap >= Math.min(tokensA.length, tokensB.length, 4) && overlap > 0;
+}
+
+function getFreshStepQuestion(step: ChatStep, history: string[]) {
+  const variants = ConversationHelper.getStepQuestionVariants(step);
+  const lastQuestion = getLatestAssistantQuestion(history);
+  if (!lastQuestion) {
+    return variants[0] ?? ConversationHelper.getStepQuestion(step);
+  }
+
+  return variants.find((question) => !questionsFeelRepeated(question, lastQuestion)) ?? variants[0] ?? ConversationHelper.getStepQuestion(step);
 }
 
 function getToneContext(collectedData: CollectedData) {
@@ -131,61 +123,109 @@ function getToneContext(collectedData: CollectedData) {
 
 function buildInvalidReply(currentStep: ChatStep, notes: string[]) {
   if (currentStep === ChatStep.NAME && notes.includes("name_refusal")) {
-    return "No problem. Even a nickname works. What should I call you?";
+    return "A nickname works. What should I call you?";
   }
 
   if (currentStep === ChatStep.STYLE) {
-    return "A rough direction is enough. Are you leaning minimal, modern, geometric, textured, or statement?";
+    return "Please share a style direction. Minimal, modern, geometric, textured, or statement?";
   }
 
   if (currentStep === ChatStep.TIMELINE) {
-    return "A rough timeline is enough. Is this for This Month, 1-3 Months, 3-6 Months, or Just Exploring?";
+    return "Please share a rough timeline. This Month, 1-3 Months, 3-6 Months, or Just Exploring?";
   }
 
   return ConversationHelper.getStepQuestion(currentStep);
 }
 
-function buildRedirectReply(currentStep: ChatStep, hasShownProducts: boolean, collectedData: CollectedData) {
-  if (currentStep === ChatStep.COMPLETED && hasShownProducts) {
-    return `${rotateCopy(collectedData, "usedRedirects", REDIRECT_OPTIONS.completed)} I can compare these, share more photos, or help with the showroom. What would you like?`;
-  }
-
-  if (currentStep === ChatStep.COMPLETED) {
-    return `${rotateCopy(collectedData, "usedRedirects", REDIRECT_OPTIONS.completed)} I can help with options, comparisons, or showroom details. What would you like?`;
-  }
-
-  return buildAtomicReply(
-    rotateCopy(collectedData, "usedRedirects", REDIRECT_OPTIONS.collecting),
-    null,
-    ConversationHelper.getStepQuestion(currentStep)
-  );
-}
-
-function buildStepAcknowledgment(currentStep: ChatStep, nextStep: ChatStep, collectedData: CollectedData) {
-  if (currentStep === ChatStep.NAME) {
-    const name = firstName(String(collectedData.name ?? ""));
-    const opening = rotateCopy(collectedData, "usedAcknowledgements", ACKNOWLEDGMENT_OPTIONS.name);
-    return name ? `${opening}, ${name}.` : `${opening}.`;
-  }
-
-  if (currentStep === ChatStep.STYLE && nextStep === ChatStep.TIMELINE) {
-    return `${rotateCopy(collectedData, "usedAcknowledgements", ACKNOWLEDGMENT_OPTIONS.style)}.`;
+function buildRedirectReply(nextStep: ChatStep, hasShownProducts: boolean, history: string[]) {
+  if (nextStep === ChatStep.COMPLETED && hasShownProducts) {
+    return "I can compare these, share more photos, or help with the showroom. What would you like?";
   }
 
   if (nextStep === ChatStep.COMPLETED) {
-    return `${rotateCopy(collectedData, "usedAcknowledgements", ACKNOWLEDGMENT_OPTIONS.completed)}.`;
+    return "I can help with options, comparisons, or showroom details. What would you like?";
   }
 
-  if (currentStep === ChatStep.BUDGET) {
-    return `${rotateCopy(collectedData, "usedAcknowledgements", ACKNOWLEDGMENT_OPTIONS.budget)}.`;
+  return getFreshStepQuestion(nextStep, history);
+}
+
+function extractReplyQuestion(text: string) {
+  const matches = text.match(/[^?]+\?/g);
+  if (!matches || matches.length === 0) {
+    return null;
   }
 
-  if (currentStep === ChatStep.AREA || currentStep === ChatStep.ROOM_TYPE) {
-    const options = currentStep === ChatStep.AREA ? ACKNOWLEDGMENT_OPTIONS.area : ACKNOWLEDGMENT_OPTIONS.room;
-    return `${rotateCopy(collectedData, "usedAcknowledgements", options)}.`;
+  return matches[matches.length - 1]?.trim() ?? null;
+}
+
+function replyQuestionMatchesStep(reply: string, step: ChatStep) {
+  const question = extractReplyQuestion(reply);
+  if (!question) {
+    return false;
   }
 
-  return `${rotateCopy(collectedData, "usedAcknowledgements", ACKNOWLEDGMENT_OPTIONS.generic)}.`;
+  return ConversationHelper.getStepQuestionVariants(step)
+    .some((variant) => questionsFeelRepeated(question, variant));
+}
+
+function normalizeToneConfig(toneConfig: ToneConfig | null | undefined) {
+  if (!toneConfig) {
+    return null;
+  }
+
+  const normalized: ToneConfig = {};
+
+  if (Array.isArray(toneConfig.preferredAcknowledgements)) {
+    normalized.preferredAcknowledgements = toneConfig.preferredAcknowledgements
+      .filter((item): item is string => typeof item === "string")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, 8);
+  }
+
+  if (typeof toneConfig.toneStyle === "string" && toneConfig.toneStyle.trim()) {
+    normalized.toneStyle = toneConfig.toneStyle.trim();
+  }
+
+  if (typeof toneConfig.emojiStyle === "string" && toneConfig.emojiStyle.trim()) {
+    normalized.emojiStyle = toneConfig.emojiStyle.trim();
+  }
+
+  if (typeof toneConfig.customInstructions === "string" && toneConfig.customInstructions.trim()) {
+    normalized.customInstructions = toneConfig.customInstructions.trim();
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : null;
+}
+
+function shouldAttachQuickReplies(params: {
+  nextStep: ChatStep;
+  quickReplies: string[];
+  reply: string;
+  recommendProducts: ResponsePlan["recommendProducts"];
+  intent: IntentResult;
+  handover: boolean;
+  isControlTurn: boolean;
+}) {
+  if (
+    params.quickReplies.length === 0 ||
+    params.handover ||
+    params.isControlTurn ||
+    params.intent.browseOnly ||
+    params.recommendProducts.length > 0
+  ) {
+    return false;
+  }
+
+  if (!STRUCTURED_QUICK_REPLY_STEPS.has(params.nextStep)) {
+    return false;
+  }
+
+  if (QUICK_REPLY_BLOCKED_INTENTS.has(params.intent.intent)) {
+    return false;
+  }
+
+  return replyQuestionMatchesStep(params.reply, params.nextStep);
 }
 
 export class ResponseService {
@@ -200,6 +240,7 @@ export class ResponseService {
     recentHistory: string[];
     currentStep: ChatStep;
     nextStep: ChatStep;
+    latestCapturedField?: string | null;
     intent: IntentResult;
     collectedData: CollectedData;
     safetyFlags?: string[];
@@ -213,17 +254,20 @@ export class ResponseService {
     promptVersionLabel: string | null;
     budgetGuard: boolean;
     exhausted: boolean;
+    toneConfig?: ToneConfig | null;
   }): Promise<ResponsePlan> {
     const faqAnswer = params.faqResults[0]?.answer ?? null;
     const city = String(params.collectedData.city ?? "").trim();
     const categoryLabel = getCurrentCategoryLabel(params.collectedData);
-    const nextQuestion = params.nextStep === ChatStep.COMPLETED ? null : ConversationHelper.getStepQuestion(params.nextStep);
+    const nextQuestion = params.nextStep === ChatStep.COMPLETED ? null : getFreshStepQuestion(params.nextStep, params.recentHistory);
     const showroomParts = splitShowroomMessage(params.showroomMsg);
     const isControlTurn =
       params.handover ||
       params.intent.intent === "PRODUCT_SWITCH" ||
       params.intent.intent === "SHOW_PRODUCTS" ||
       params.intent.intent === "MORE_IMAGES";
+    const normalizedToneConfig = normalizeToneConfig(params.toneConfig);
+
     let approvedReply = "";
     let reply = "";
     let allowPhrasing = false;
@@ -236,41 +280,41 @@ export class ResponseService {
       approvedReply = TEAM_HANDOVER_MESSAGE;
     } else if (params.intent.intent === "PRODUCT_SWITCH") {
       if (params.budgetGuard) {
-        approvedReply = "Wall panels usually start around Rs 400+/sqft.\nWant me to show Breeze Blocks or Brick Cladding instead?";
+        approvedReply = "Wall panels usually start around Rs 400+/sqft.\nWould you like to see Breeze Blocks or Brick Cladding instead?";
       } else {
         approvedReply = params.recommendProducts.length > 0
-          ? `Sure, we can switch to ${categoryLabel}. Here are a few options.`
-          : `Sure, we can switch to ${categoryLabel}.`;
+          ? `Switching to ${categoryLabel}.\nHere are some options.`
+          : `Switching to ${categoryLabel}.`;
       }
     } else if (params.intent.intent === "SHOW_PRODUCTS") {
       if (params.recommendProducts.length > 0) {
-        approvedReply = `Sure, here are a few ${categoryLabel.toLowerCase()} options.`;
+        approvedReply = `Here are some ${categoryLabel.toLowerCase()} options.`;
       } else if (params.exhausted) {
         approvedReply = `I don't have more verified ${categoryLabel.toLowerCase()} options right now.`;
       } else {
-        approvedReply = `Sure, I can show you ${categoryLabel.toLowerCase()} options.`;
+        approvedReply = `I can show you ${categoryLabel.toLowerCase()} options.`;
       }
     } else if (params.intent.intent === "MORE_IMAGES") {
       approvedReply = params.recommendProducts.length > 0
-        ? "Sure, here are more images."
-        : "Sure, tell me which option you'd like to see more images of.";
+        ? "Here are more images."
+        : "Tell me which option you'd like to see more images of.";
     } else if (params.safetyFlags?.includes("quote_request")) {
       approvedReply = "I can share a rough range here, but not a final quote. If you'd like, I can connect you with our team for an exact quote.";
     } else if (params.safetyFlags?.includes("discount_request")) {
-      approvedReply = "I can't confirm discounts here, but I can help you with the right options or connect you with our team.";
+      approvedReply = "I can't confirm discounts here, but I can help with the right options or connect you with our team.";
     } else if (params.intent.intent === "PURCHASE_INTENT") {
       if (!city) {
-        approvedReply = "Sure. Which city should I check for you?";
+        approvedReply = "Which city should I check for you?";
       } else if (params.showroomMsg) {
         approvedReply = [
-          `Yes, we have a showroom in ${city}.`,
+          `We have a showroom in ${city}.`,
           showroomParts.details,
-          "Want the contact or should I connect you with our team?",
+          "Would you like the contact or should I connect you with our team?",
         ]
           .filter((item) => item && item.trim())
           .join("\n");
       } else {
-        approvedReply = `I can help you take this forward in ${city}.\nWant me to connect you with our team?`;
+        approvedReply = `I can help you take this forward in ${city}.\nWould you like me to connect you with our team?`;
       }
     } else if (params.intent.intent === "SECURITY_ATTACK") {
       approvedReply = "I can help with options, design guidance, or showroom details.";
@@ -281,32 +325,28 @@ export class ResponseService {
     } else if (params.intent.intent === "RESET") {
       approvedReply = params.currentStep === ChatStep.COMPLETED
         ? "We can update any specific detail here, or start a new chat if you'd like."
-        : "Of course. We can start fresh from here. Tell me the detail you'd like to change.";
+        : "We can start fresh from here. Tell me the detail you'd like to change.";
     } else if (params.intent.intent === "FAQ" && faqAnswer) {
       approvedReply = params.currentStep === ChatStep.COMPLETED
-        ? `${faqAnswer}\n\nWant help compare options or check a showroom?`
-        : buildAtomicReply(faqAnswer, params.showroomMsg, ConversationHelper.getStepQuestion(params.currentStep));
+        ? `${faqAnswer}\nWould you like help comparing options or checking a showroom?`
+        : buildComposedReply(faqAnswer, params.showroomMsg, nextQuestion);
       allowPhrasing = !params.showroomMsg;
     } else if (params.intent.intent === "FAQ") {
-      approvedReply = buildRedirectReply(params.currentStep, params.collectedData.hasShownProducts === true, params.collectedData);
+      approvedReply = buildRedirectReply(params.nextStep, params.collectedData.hasShownProducts === true, params.recentHistory);
     } else if (params.intent.intent === "IRRELEVANT" || params.intent.intent === "SMALL_TALK") {
-      approvedReply = buildRedirectReply(params.currentStep, params.collectedData.hasShownProducts === true, params.collectedData);
+      approvedReply = buildRedirectReply(params.nextStep, params.collectedData.hasShownProducts === true, params.recentHistory);
     } else if (params.budgetGuard) {
-      approvedReply = "Wall panels usually start around Rs 400+/sqft.\nWant me to show Breeze Blocks or Brick Cladding instead?";
+      approvedReply = "Wall panels usually start around Rs 400+/sqft.\nWould you like to see Breeze Blocks or Brick Cladding instead?";
     } else if (params.intent.intent === "MORE_PRODUCTS" && params.exhausted) {
-      approvedReply = `I've shown all my ${categoryLabel.toLowerCase()} options for now.\nWant me to compare these or explore another category?`;
+      approvedReply = `All ${categoryLabel.toLowerCase()} options are shown for now.\nWould you like to compare these or explore another category?`;
     } else if (params.nextStep === ChatStep.COMPLETED && params.recommendProducts.length > 0) {
-      approvedReply = "Nice, I picked a few good options for you.\nTap one and I'll help you compare.";
+      approvedReply = "Here are a few options.\nSelect one and I can compare them.";
     } else if (params.currentStep === ChatStep.COMPLETED && params.collectedData.hasShownProducts && params.recommendProducts.length === 0) {
-      approvedReply = "Want me to compare these, share more images, or help with the showroom?";
+      approvedReply = "I can compare these, share more images, or help with the showroom.";
     } else if (params.intent.intent === "INVALID") {
-      approvedReply = buildInvalidReply(params.currentStep, params.intent.notes);
+      approvedReply = buildInvalidReply(params.nextStep === ChatStep.COMPLETED ? params.currentStep : params.nextStep, params.intent.notes);
     } else {
-      approvedReply = buildAtomicReply(
-        buildStepAcknowledgment(params.currentStep, params.nextStep, params.collectedData),
-        params.showroomMsg,
-        nextQuestion
-      );
+      approvedReply = buildComposedReply(null, params.showroomMsg, nextQuestion);
       allowPhrasing = !params.showroomMsg;
     }
 
@@ -330,6 +370,7 @@ export class ResponseService {
           intent: params.intent.intent,
           recentHistory: params.recentHistory.slice(-6),
           toneContext: getToneContext(params.collectedData),
+          toneConfig: normalizedToneConfig,
         };
         const phrased = await this.deps.groqTextCompletion(
           CALL2_REWRITE_PROMPT,
@@ -363,11 +404,24 @@ export class ResponseService {
       }
     }
 
+    const finalReply = enforceReplyShape(reply);
+    const finalQuickReplies = shouldAttachQuickReplies({
+      nextStep: params.nextStep,
+      quickReplies: params.quickReplies,
+      reply: finalReply,
+      recommendProducts: params.recommendProducts,
+      intent: params.intent,
+      handover: params.handover,
+      isControlTurn,
+    })
+      ? params.quickReplies
+      : [];
+
     return {
-      reply: enforceReplyShape(reply),
+      reply: finalReply,
       stepQuestion: nextQuestion,
       nextStep: params.nextStep,
-      quickReplies: params.nextStep === ChatStep.COMPLETED ? [] : params.quickReplies,
+      quickReplies: params.nextStep === ChatStep.COMPLETED ? [] : finalQuickReplies,
       recommendProducts: params.recommendProducts,
       isMoreImages: params.intent.intent === "MORE_IMAGES",
       isBrowseOnly: params.intent.browseOnly,
